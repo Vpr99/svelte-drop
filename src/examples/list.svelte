@@ -1,18 +1,18 @@
 <script lang="ts">
   import { writable } from 'svelte/store';
 
-  const books = [
-    {id: 1, author: 'Harper Lee', title: 'To Kill a Mockingbird'},
-    {id: 2, author: 'Lev Tolstoy', title: 'War and Peace'},
-    {id: 3, author: 'Fyodor Dostoyevsy', title: 'The Idiot'},
-    {id: 4, author: 'Oscar Wilde', title: 'A Picture of Dorian Gray'},
-    {id: 5, author: 'George Orwell', title: '1984'},
-    {id: 6, author: 'Jane Austen', title: 'Pride and Prejudice'},
-    {id: 7, author: 'Marcus Aurelius', title: 'Meditations'},
-    {id: 8, author: 'Fyodor Dostoevsky', title: 'The Brothers Karamazov'},
-    {id: 9, author: 'Lev Tolstoy', title: 'Anna Karenina'},
-    {id: 10, author: 'Fyodor Dostoevsky', title: 'Crime and Punishment'},
-  ]
+  const items = writable([
+    {author: 'Harper Lee', title: 'To Kill a Mockingbird'},
+    {author: 'Lev Tolstoy', title: 'War and Peace'},
+    {author: 'Fyodor Dostoyevsy', title: 'The Idiot'},
+    {author: 'Oscar Wilde', title: 'A Picture of Dorian Gray'},
+    {author: 'George Orwell', title: '1984'},
+    {author: 'Jane Austen', title: 'Pride and Prejudice'},
+    {author: 'Marcus Aurelius', title: 'Meditations'},
+    {author: 'Fyodor Dostoevsky', title: 'The Brothers Karamazov'},
+    {author: 'Lev Tolstoy', title: 'Anna Karenina'},
+    { author: 'Fyodor Dostoevsky', title: 'Crime and Punishment'},
+  ])
 
   function getBooksFilter(inputValue) {
     const lowerCasedInputValue = inputValue.toLowerCase()
@@ -25,8 +25,6 @@
       )
     }
   }
-
-  const items = writable(books);
   
   const {
     isOpen,
@@ -39,9 +37,11 @@
     selectedItem,
   } = useCombobox({
     onInputValueChange({inputValue}) {
-      items.set(books.filter(getBooksFilter(inputValue)))
+      items.set(value => {
+        value.filter(getBooksFilter(inputValue))
+      })
     },
-    items,
+    $items,
     itemToString(item) {
       return item ? item.title : ''
     },
@@ -64,32 +64,28 @@
         type="button"
         {...getToggleButtonProps()}
       >
-      {#if isOpen}
-        &#8593
-      {:else}
-        &#8595
-      {/if}
+      <!-- We must output these at HTML ASCII characters in order for them to render -->
+      {isOpen ? "⬆️" : "⬇️"} 
       </button>
     </div>
   </div>
+  
   <ul
     style:--status={!(isOpen && $items.length) ? 'hidden' : "visible"}
     class="list"
     {...getMenuProps()}
   >
     {#if isOpen}
-      {#each $items as item (thing.id)}
+      {#each $items as item, index (index)}
           <li
-          class={cx(
-            highlightedIndex === index && 'bg-blue-300',
-            selectedItem === item && 'font-bold',
-            'py-2 px-3 shadow-sm flex flex-col',
-          )}
+          style:--background-color={highlightedIndex === index ? '#eee' : "transparent"}
+          style:--font-weight={selectedItem === item ? '700' : "400"}
+          class="item"
           {...getItemProps({item, index})}
         >
           <span>{item.title}</span>
 
-          <span class="text-sm text-gray-700">{item.author}</span>
+          <span class="item-author">{item.author}</span>
         </li>
       {/each}
     {/if}
@@ -133,5 +129,18 @@
     position: absolute;
     visibility: var(--status, 'hidden');
     width: 18rem;
+  }
+
+  .item {
+    background-color: var(--background-color, transparent);
+    display: flex;
+    flex-direction: column;
+    font-weight: var(--font-weight, 400);
+    padding: .5rem .75rem;
+  }
+
+  .item-author {
+    color: #555;
+    font-size: .75em;
   }
 </style>
