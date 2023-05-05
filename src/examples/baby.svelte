@@ -34,6 +34,11 @@
     triggerButtonAttributes,
     highlightedIndex,
   } = createCombobox({ items: $items });
+
+  $: {
+    console.log("highlightedIndex", $highlightedIndex);
+  }
+  console.log("highlightedIndex", $highlightedIndex);
 </script>
 
 <div>

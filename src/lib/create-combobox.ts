@@ -25,6 +25,7 @@ interface Combobox {
  * [ ] up/down should be bound
  * ...........
  * @TODO make `isOpen` not writable from the outside.
+ * @TODO scroll down to an item when it's highlighted
  */
 export function createCombobox<T extends Item>(
   props: ComboboxProps<T>
@@ -85,23 +86,36 @@ export function createCombobox<T extends Item>(
   };
 
   function handleKeydown(e: KeyboardEvent) {
-    $store.subscribe((state) => {
-      if (!state.isOpen) {
-        return;
-      }
-
-      if (e.key === "Escape") {
-        close();
-      }
-
-      if (e.key === "ArrowDown") {
-        highlightedIndex.update((index) => index + 1);
-      }
-      if (e.key === "ArrowUp") {
-        highlightedIndex.update((index) => index - 1);
-      }
-      // TODO: top -> bottom and bottom -> top
+    let state: any;
+    const unsubscribe = $store.subscribe((value) => {
+      state = value;
     });
+
+    if (e.key === "Escape") {
+      // @TODO figure out why this hack is required.
+      close();
+      (e.target as HTMLElement).blur();
+    }
+
+    if (e.key === "ArrowDown") {
+      highlightedIndex.update((index) => {
+        if (index === props.items.length - 1) {
+          return 0;
+        }
+        return index + 1;
+      });
+    }
+
+    if (e.key === "ArrowUp") {
+      highlightedIndex.update((index) => {
+        if (index === 0) {
+          return props.items.length - 1;
+        }
+        return index - 1;
+      });
+    }
+    // TODO: top -> bottom and bottom -> top
+    unsubscribe();
   }
 
   return {
