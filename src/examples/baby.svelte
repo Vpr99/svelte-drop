@@ -27,9 +27,13 @@
   //   };
   // }
 
-  const { isOpen, triggerButton, filterInput } = createCombobox({
-    items: $items,
-  });
+  const {
+    isOpen,
+    triggerButton,
+    filterInput,
+    triggerButtonAttributes,
+    highlightedIndex,
+  } = createCombobox({ items: $items });
 </script>
 
 <div>
@@ -37,20 +41,30 @@
     <label class="label">Choose your favorite book:</label>
     <div class="search-box">
       <input use:filterInput placeholder="Best book ever" class="input" />
-      <button use:triggerButton class="button" type="button" tabindex="-1">
+      <button
+        use:triggerButton
+        {...$triggerButtonAttributes}
+        class="button"
+        type="button"
+      >
         <!-- We must output these at HTML ASCII characters in order for them to render -->
         {$isOpen ? "⬆️" : "⬇️"}
       </button>
     </div>
   </div>
-
   <ul
     style:--status={!($isOpen && $items.length) ? "hidden" : "visible"}
     class="list"
   >
     {#if $isOpen}
       {#each $items as item, index (index)}
-        <li class="item">
+        <li
+          class="item"
+          style:--background-color={$highlightedIndex === index
+            ? "#eee"
+            : "transparent"}
+        >
+          <!-- style:--font-weight={$selectedItem === item ? "700" : "400"} -->
           <span>{item.title}</span>
           <span class="item-author">{item.author}</span>
         </li>

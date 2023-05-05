@@ -1,5 +1,7 @@
 import type { Action } from "svelte/action";
-import { writable, type Writable } from "svelte/store";
+import { writable, type Writable, type Readable, derived } from "svelte/store";
+import { nanoid } from "nanoid";
+import type { HTMLButtonAttributes } from "svelte/elements";
 
 type Item = Record<string, unknown>;
 interface ComboboxProps<T extends Item> {
@@ -10,6 +12,8 @@ interface Combobox {
   isOpen: Writable<boolean>;
   filterInput: Action<HTMLInputElement, void>;
   triggerButton: Action<HTMLButtonElement, void>;
+  triggerButtonAttributes: Readable<HTMLButtonAttributes>;
+  highlightedIndex: Writable<number>;
 }
 
 /**
@@ -17,12 +21,32 @@ interface Combobox {
  * [X] it has a trigger and a list
  * [X] when you click the trigger, it opens the list
  * [ ] when you click elsewhere, it closes the list
+ * [ ] clicking the button should focus the input
+ * [ ] up/down should be bound
  * ...........
+ * @TODO make `isOpen` not writable from the outside.
  */
 export function createCombobox<T extends Item>(
   props: ComboboxProps<T>
 ): Combobox {
+  const id = nanoid();
   const isOpen = writable(false);
+  const highlightedIndex = writable(-1);
+
+  const $store = derived(
+    [isOpen, highlightedIndex],
+    ([isOpen, highlightedIndex]) => ({ isOpen, highlightedIndex })
+  );
+
+  //   <input placeholder="Best book ever" class="w-full p-1.5" aria-activedescendant="" aria-autocomplete="list" aria-controls="downshift-0-menu" aria-expanded="false" aria-labelledby="downshift-0-label" autocomplete="off" id="downshift-0-input" role="combobox" value="">
+  // <button aria-label="toggle menu" class="px-2" type="button" aria-controls="downshift-0-menu" aria-expanded="false" id="downshift-0-toggle-button" tabindex="-1">↓</button>
+
+  const triggerButtonAttributes = derived(isOpen, (isOpen) => ({
+    "aria-expanded": isOpen,
+    "aria-haspopup": true,
+    id,
+    tabIndex: "-1",
+  }));
 
   function toggle() {
     isOpen.update((value) => !value);
@@ -39,8 +63,11 @@ export function createCombobox<T extends Item>(
   const filterInput: Action<HTMLInputElement, void> = (node) => {
     node.addEventListener("blur", close);
     node.addEventListener("focus", open);
+    node.addEventListener("keydown", handleKeydown);
+
     return {
       destroy: () => {
+        node.removeEventListener("keydown", handleKeydown);
         node.removeEventListener("blur", close);
         node.removeEventListener("focus", open);
       },
@@ -57,10 +84,32 @@ export function createCombobox<T extends Item>(
     };
   };
 
+  function handleKeydown(e: KeyboardEvent) {
+    $store.subscribe((state) => {
+      if (!state.isOpen) {
+        return;
+      }
+
+      if (e.key === "Escape") {
+        close();
+      }
+
+      if (e.key === "ArrowDown") {
+        highlightedIndex.update((index) => index + 1);
+      }
+      if (e.key === "ArrowUp") {
+        highlightedIndex.update((index) => index - 1);
+      }
+      // TODO: top -> bottom and bottom -> top
+    });
+  }
+
   return {
     isOpen,
     filterInput,
     triggerButton,
+    triggerButtonAttributes,
+    highlightedIndex,
   };
 }
 
