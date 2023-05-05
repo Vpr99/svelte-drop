@@ -1,5 +1,5 @@
 import type { Action } from "svelte/action";
-import { writable, type Writable, type Readable, derived } from "svelte/store";
+import { writable, type Readable, derived, readonly } from "svelte/store";
 import { nanoid } from "nanoid";
 import type {
   HTMLAttributes,
@@ -8,7 +8,6 @@ import type {
   HTMLLabelAttributes,
   HTMLLiAttributes,
 } from "svelte/elements";
-import { tick } from "svelte";
 
 type Item = Record<string, unknown>;
 interface ComboboxProps<T extends Item> {
@@ -16,7 +15,7 @@ interface ComboboxProps<T extends Item> {
 }
 
 interface Combobox {
-  isOpen: Writable<boolean>;
+  isOpen: Readable<boolean>;
   filterInput: Action<HTMLInputElement, void>;
   triggerButton: Action<HTMLButtonElement, void>;
   triggerButtonAttributes: Readable<HTMLButtonAttributes>;
@@ -26,7 +25,7 @@ interface Combobox {
   listAttributes: HTMLAttributes<
     HTMLUListElement | HTMLOListElement | HTMLDListElement
   >;
-  highlightedIndex: Writable<number>;
+  highlightedIndex: Readable<number>;
   getItemProps: (index: number) => HTMLLiAttributes;
 }
 
@@ -39,8 +38,6 @@ interface Combobox {
  * [X] up/down should be bound
  * [X] Label + other accessibility stuff
  * ...........
- * @TODO make `isOpen` not writable from the outside.
- * @TODO scroll down to an item when it's highlighted
  * @TODO investigate passing back attribute values directly instead of using readable stores
  */
 export function createCombobox<T extends Item>(
@@ -49,11 +46,6 @@ export function createCombobox<T extends Item>(
   const id = nanoid();
   const isOpen = writable(false);
   const highlightedIndex = writable(-1);
-
-  const $store = derived(
-    [isOpen, highlightedIndex],
-    ([isOpen, highlightedIndex]) => ({ isOpen, highlightedIndex })
-  );
 
   // @TODO change name?
   const triggerButtonAttributes = derived(isOpen, (isOpen) => ({
@@ -73,6 +65,23 @@ export function createCombobox<T extends Item>(
     id: `${id}-menu`,
     role: "listbox",
   };
+
+  let $store: {
+    isOpen: boolean;
+    highlightedIndex: number;
+  };
+
+  const state = derived(
+    [isOpen, highlightedIndex],
+    ([isOpen, highlightedIndex]) => ({
+      isOpen,
+      highlightedIndex,
+    })
+  );
+
+  state.subscribe((value) => {
+    $store = value;
+  });
 
   // @TODO change name?
   // @TODO add `satisfies` maybe?
@@ -141,10 +150,9 @@ export function createCombobox<T extends Item>(
   };
 
   function handleKeydown(e: KeyboardEvent) {
-    let state: any;
-    const unsubscribe = $store.subscribe((value) => {
-      state = value;
-    });
+    if (!$store.isOpen) {
+      return;
+    }
 
     if (e.key === "Escape") {
       close();
@@ -171,19 +179,17 @@ export function createCombobox<T extends Item>(
         return newIndex;
       });
     }
-    // TODO: top -> bottom and bottom -> top
-    unsubscribe();
   }
 
   return {
-    isOpen,
+    isOpen: readonly(isOpen),
     filterInput,
     triggerButton,
     triggerButtonAttributes,
     filterInputAttributes,
     listAttributes,
     labelAttributes,
-    highlightedIndex,
+    highlightedIndex: readonly(highlightedIndex),
     getItemProps,
   };
 }
