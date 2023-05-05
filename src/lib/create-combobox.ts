@@ -1,7 +1,12 @@
 import type { Action } from "svelte/action";
 import { writable, type Writable, type Readable, derived } from "svelte/store";
 import { nanoid } from "nanoid";
-import type { HTMLButtonAttributes } from "svelte/elements";
+import type {
+  HTMLAttributes,
+  HTMLButtonAttributes,
+  HTMLInputAttributes,
+  HTMLLabelAttributes,
+} from "svelte/elements";
 
 type Item = Record<string, unknown>;
 interface ComboboxProps<T extends Item> {
@@ -13,6 +18,10 @@ interface Combobox {
   filterInput: Action<HTMLInputElement, void>;
   triggerButton: Action<HTMLButtonElement, void>;
   triggerButtonAttributes: Readable<HTMLButtonAttributes>;
+  filterInputAttributes: Readable<HTMLInputAttributes>;
+  labelAttributes: HTMLLabelAttributes;
+  // @TODO add OL, DL, nav???
+  listAttributes: HTMLAttributes<HTMLUListElement>;
   highlightedIndex: Writable<number>;
 }
 
@@ -20,12 +29,14 @@ interface Combobox {
  * minimumest viable combobox
  * [X] it has a trigger and a list
  * [X] when you click the trigger, it opens the list
- * [ ] when you click elsewhere, it closes the list
- * [ ] clicking the button should focus the input
- * [ ] up/down should be bound
+ * [X] when you click elsewhere, it closes the list
+ * [X] clicking the button should focus the input (ish)
+ * [X] up/down should be bound
+ * [ ] Label + other accessibility stuff
  * ...........
  * @TODO make `isOpen` not writable from the outside.
  * @TODO scroll down to an item when it's highlighted
+ * @TODO investigate passing back attribute values directly instead of using readable stores
  */
 export function createCombobox<T extends Item>(
   props: ComboboxProps<T>
@@ -42,15 +53,49 @@ export function createCombobox<T extends Item>(
   //   <input placeholder="Best book ever" class="w-full p-1.5" aria-activedescendant="" aria-autocomplete="list" aria-controls="downshift-0-menu" aria-expanded="false" aria-labelledby="downshift-0-label" autocomplete="off" id="downshift-0-input" role="combobox" value="">
   // <button aria-label="toggle menu" class="px-2" type="button" aria-controls="downshift-0-menu" aria-expanded="false" id="downshift-0-toggle-button" tabindex="-1">↓</button>
 
+  // @TODO change name?
   const triggerButtonAttributes = derived(isOpen, (isOpen) => ({
+    "aria-controls": `${id}-menu`,
     "aria-expanded": isOpen,
     "aria-haspopup": true,
-    id,
+    id: `${id}-button`,
     tabIndex: "-1",
   }));
 
+  const labelAttributes = {
+    id: `${id}-label`,
+    for: `${id}-input`,
+  };
+
+  const listAttributes = {
+    id: `${id}-menu`,
+    role: "listbox",
+  };
+
+  // @TODO change name?
+  // @TODO add `satisfies` maybe?
+  // @TODO active descendant
+  const filterInputAttributes = derived(
+    isOpen,
+    (isOpen) =>
+      ({
+        "aria-autocomplete": "list",
+        "aria-controls": `${id}-menu`,
+        "aria-expanded": isOpen,
+        "aria-labelledby": `${id}-label`,
+        autocomplete: "off",
+        id: `${id}-input`,
+        role: "combobox",
+      } as const)
+  );
+
   function toggle() {
     isOpen.update((value) => !value);
+  }
+
+  function focusInput(e: MouseEvent) {
+    // TODO change this to a getElementById beacuse there might be more than 1 input as a sibling.
+    (e.target as HTMLElement).parentElement?.querySelector("input")?.focus();
   }
 
   function close() {
@@ -77,6 +122,7 @@ export function createCombobox<T extends Item>(
 
   const triggerButton: Action<HTMLButtonElement, void> = (node) => {
     node.addEventListener("click", toggle);
+    node.addEventListener("click", focusInput);
 
     return {
       destroy: () => {
@@ -92,8 +138,8 @@ export function createCombobox<T extends Item>(
     });
 
     if (e.key === "Escape") {
-      // @TODO figure out why this hack is required.
       close();
+      // @TODO figure out why this hack is required.
       (e.target as HTMLElement).blur();
     }
 
@@ -123,6 +169,9 @@ export function createCombobox<T extends Item>(
     filterInput,
     triggerButton,
     triggerButtonAttributes,
+    filterInputAttributes,
+    listAttributes,
+    labelAttributes,
     highlightedIndex,
   };
 }

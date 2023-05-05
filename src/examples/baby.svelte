@@ -31,6 +31,7 @@
     isOpen,
     triggerButton,
     filterInput,
+    filterInputAttributes,
     triggerButtonAttributes,
     highlightedIndex,
   } = createCombobox({ items: $items });
@@ -45,7 +46,12 @@
   <div class="container">
     <label class="label">Choose your favorite book:</label>
     <div class="search-box">
-      <input use:filterInput placeholder="Best book ever" class="input" />
+      <input
+        use:filterInput
+        {...$filterInputAttributes}
+        placeholder="Best book ever"
+        class="input"
+      />
       <button
         use:triggerButton
         {...$triggerButtonAttributes}
