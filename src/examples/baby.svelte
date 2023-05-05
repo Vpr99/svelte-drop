@@ -27,7 +27,7 @@
   //   };
   // }
 
-  const { isOpen, toggleButton } = createCombobox({
+  const { isOpen, triggerButton, filterInput } = createCombobox({
     items: $items,
   });
 </script>
@@ -36,8 +36,8 @@
   <div class="container">
     <label class="label">Choose your favorite book:</label>
     <div class="search-box">
-      <input placeholder="Best book ever" class="input" />
-      <button aria-label="toggle menu" class="button" type="button" on:click={toggleButton}>
+      <input use:filterInput placeholder="Best book ever" class="input" />
+      <button use:triggerButton class="button" type="button" tabindex="-1">
         <!-- We must output these at HTML ASCII characters in order for them to render -->
         {$isOpen ? "⬆️" : "⬇️"}
       </button>
