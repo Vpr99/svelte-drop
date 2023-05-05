@@ -6,7 +6,9 @@ import type {
   HTMLButtonAttributes,
   HTMLInputAttributes,
   HTMLLabelAttributes,
+  HTMLLiAttributes,
 } from "svelte/elements";
+import { tick } from "svelte";
 
 type Item = Record<string, unknown>;
 interface ComboboxProps<T extends Item> {
@@ -20,9 +22,12 @@ interface Combobox {
   triggerButtonAttributes: Readable<HTMLButtonAttributes>;
   filterInputAttributes: Readable<HTMLInputAttributes>;
   labelAttributes: HTMLLabelAttributes;
-  // @TODO add OL, DL, nav???
-  listAttributes: HTMLAttributes<HTMLUListElement>;
+  // @TODO nav???
+  listAttributes: HTMLAttributes<
+    HTMLUListElement | HTMLOListElement | HTMLDListElement
+  >;
   highlightedIndex: Writable<number>;
+  getItemProps: (index: number) => HTMLLiAttributes;
 }
 
 /**
@@ -32,7 +37,7 @@ interface Combobox {
  * [X] when you click elsewhere, it closes the list
  * [X] clicking the button should focus the input (ish)
  * [X] up/down should be bound
- * [ ] Label + other accessibility stuff
+ * [X] Label + other accessibility stuff
  * ...........
  * @TODO make `isOpen` not writable from the outside.
  * @TODO scroll down to an item when it's highlighted
@@ -49,9 +54,6 @@ export function createCombobox<T extends Item>(
     [isOpen, highlightedIndex],
     ([isOpen, highlightedIndex]) => ({ isOpen, highlightedIndex })
   );
-
-  //   <input placeholder="Best book ever" class="w-full p-1.5" aria-activedescendant="" aria-autocomplete="list" aria-controls="downshift-0-menu" aria-expanded="false" aria-labelledby="downshift-0-label" autocomplete="off" id="downshift-0-input" role="combobox" value="">
-  // <button aria-label="toggle menu" class="px-2" type="button" aria-controls="downshift-0-menu" aria-expanded="false" id="downshift-0-toggle-button" tabindex="-1">↓</button>
 
   // @TODO change name?
   const triggerButtonAttributes = derived(isOpen, (isOpen) => ({
@@ -74,15 +76,16 @@ export function createCombobox<T extends Item>(
 
   // @TODO change name?
   // @TODO add `satisfies` maybe?
-  // @TODO active descendant
   const filterInputAttributes = derived(
-    isOpen,
-    (isOpen) =>
+    [isOpen, highlightedIndex],
+    ([isOpen, highlightedIndex]) =>
       ({
         "aria-autocomplete": "list",
         "aria-controls": `${id}-menu`,
         "aria-expanded": isOpen,
         "aria-labelledby": `${id}-label`,
+        "aria-activedescendant":
+          highlightedIndex > -1 ? `${id}-descendent-${highlightedIndex}` : "",
         autocomplete: "off",
         id: `${id}-input`,
         role: "combobox",
@@ -91,11 +94,12 @@ export function createCombobox<T extends Item>(
 
   function toggle() {
     isOpen.update((value) => !value);
-  }
 
-  function focusInput(e: MouseEvent) {
-    // TODO change this to a getElementById beacuse there might be more than 1 input as a sibling.
-    (e.target as HTMLElement).parentElement?.querySelector("input")?.focus();
+    isOpen.subscribe((value) => {
+      if (value === true) {
+        document?.getElementById(`${id}-input`)?.focus();
+      }
+    });
   }
 
   function close() {
@@ -104,6 +108,12 @@ export function createCombobox<T extends Item>(
 
   function open() {
     isOpen.set(true);
+  }
+
+  function getItemProps(index: number) {
+    return {
+      id: `${id}-descendent-${index}`,
+    };
   }
 
   const filterInput: Action<HTMLInputElement, void> = (node) => {
@@ -122,7 +132,6 @@ export function createCombobox<T extends Item>(
 
   const triggerButton: Action<HTMLButtonElement, void> = (node) => {
     node.addEventListener("click", toggle);
-    node.addEventListener("click", focusInput);
 
     return {
       destroy: () => {
@@ -145,19 +154,21 @@ export function createCombobox<T extends Item>(
 
     if (e.key === "ArrowDown") {
       highlightedIndex.update((index) => {
-        if (index === props.items.length - 1) {
-          return 0;
-        }
-        return index + 1;
+        const newIndex = index === props.items.length - 1 ? 0 : index + 1;
+        document
+          .getElementById(`${id}-descendent-${newIndex}`)
+          ?.scrollIntoView(false);
+        return newIndex;
       });
     }
 
     if (e.key === "ArrowUp") {
       highlightedIndex.update((index) => {
-        if (index === 0) {
-          return props.items.length - 1;
-        }
-        return index - 1;
+        const newIndex = index === 0 ? props.items.length - 1 : index - 1;
+        document
+          .getElementById(`${id}-descendent-${newIndex}`)
+          ?.scrollIntoView(false);
+        return newIndex;
       });
     }
     // TODO: top -> bottom and bottom -> top
@@ -173,6 +184,7 @@ export function createCombobox<T extends Item>(
     listAttributes,
     labelAttributes,
     highlightedIndex,
+    getItemProps,
   };
 }
 

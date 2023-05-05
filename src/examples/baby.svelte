@@ -31,20 +31,18 @@
     isOpen,
     triggerButton,
     filterInput,
+    labelAttributes,
+    listAttributes,
     filterInputAttributes,
     triggerButtonAttributes,
     highlightedIndex,
+    getItemProps,
   } = createCombobox({ items: $items });
-
-  $: {
-    console.log("highlightedIndex", $highlightedIndex);
-  }
-  console.log("highlightedIndex", $highlightedIndex);
 </script>
 
 <div>
   <div class="container">
-    <label class="label">Choose your favorite book:</label>
+    <label class="label" {...labelAttributes}>Choose your favorite book:</label>
     <div class="search-box">
       <input
         use:filterInput
@@ -55,6 +53,7 @@
       <button
         use:triggerButton
         {...$triggerButtonAttributes}
+        aria-label="toggle menu"
         class="button"
         type="button"
       >
@@ -64,8 +63,9 @@
     </div>
   </div>
   <ul
-    style:--status={!($isOpen && $items.length) ? "hidden" : "visible"}
+    style:--status={!($isOpen && $items.length) ? "visible" : "visible"}
     class="list"
+    {...listAttributes}
   >
     {#if $isOpen}
       {#each $items as item, index (index)}
@@ -74,6 +74,7 @@
           style:--background-color={$highlightedIndex === index
             ? "#eee"
             : "transparent"}
+          {...getItemProps(index)}
         >
           <!-- style:--font-weight={$selectedItem === item ? "700" : "400"} -->
           <span>{item.title}</span>
