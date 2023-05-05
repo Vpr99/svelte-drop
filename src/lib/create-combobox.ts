@@ -1,5 +1,6 @@
 import type { Action } from "svelte/action";
 import { writable, type Readable, derived, readonly } from "svelte/store";
+import { getNextIndex } from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
   HTMLAttributes,
@@ -21,7 +22,6 @@ interface Combobox {
   triggerButtonAttributes: Readable<HTMLButtonAttributes>;
   filterInputAttributes: Readable<HTMLInputAttributes>;
   labelAttributes: HTMLLabelAttributes;
-  // @TODO nav???
   listAttributes: HTMLAttributes<
     HTMLUListElement | HTMLOListElement | HTMLDListElement
   >;
@@ -101,9 +101,9 @@ export function createCombobox<T extends Item>(
       } as const)
   );
 
+  // Toggle menu visibility.
   function toggle() {
     isOpen.update((value) => !value);
-
     isOpen.subscribe((value) => {
       if (value === true) {
         document?.getElementById(`${id}-input`)?.focus();
@@ -111,12 +111,15 @@ export function createCombobox<T extends Item>(
     });
   }
 
+  // Close the menu.
   function close() {
     isOpen.set(false);
   }
 
+  // Open the menu and focus the input.
   function open() {
     isOpen.set(true);
+    document?.getElementById(`${id}-input`)?.focus();
   }
 
   function getItemProps(index: number) {
@@ -162,21 +165,30 @@ export function createCombobox<T extends Item>(
 
     if (e.key === "ArrowDown") {
       highlightedIndex.update((index) => {
-        const newIndex = index === props.items.length - 1 ? 0 : index + 1;
+        const nextIndex = getNextIndex({
+          currentIndex: index,
+          itemCount: props.items.length,
+          moveAmount: 1,
+        });
+        // @TODO is this the right place for side-effects?
         document
-          .getElementById(`${id}-descendent-${newIndex}`)
+          .getElementById(`${id}-descendent-${nextIndex}`)
           ?.scrollIntoView(false);
-        return newIndex;
+        return nextIndex;
       });
     }
-
     if (e.key === "ArrowUp") {
       highlightedIndex.update((index) => {
-        const newIndex = index === 0 ? props.items.length - 1 : index - 1;
+        const nextIndex = getNextIndex({
+          currentIndex: index,
+          itemCount: props.items.length,
+          moveAmount: -1,
+        });
+        // @TODO is this the right place for side-effects?
         document
-          .getElementById(`${id}-descendent-${newIndex}`)
+          .getElementById(`${id}-descendent-${nextIndex}`)
           ?.scrollIntoView(false);
-        return newIndex;
+        return nextIndex;
       });
     }
   }
