@@ -1,6 +1,6 @@
 <script lang="ts">
   import { writable } from "svelte/store";
-  import { createCombobox } from "../lib/create-combobox.ts";
+  import { createCombobox } from "$lib/index.js";
 
   const items = writable([
     { author: "Harper Lee", title: "To Kill a Mockingbird" },
@@ -97,7 +97,6 @@
   }
 
   .label {
-  
   }
 
   .search-box {
