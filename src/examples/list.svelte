@@ -37,9 +37,7 @@
     selectedItem,
   } = useCombobox({
     onInputValueChange({inputValue}) {
-      items.set(value => {
-        value.filter(getBooksFilter(inputValue))
-      })
+      items.update(value => value.filter(getBooksFilter(inputValue)))
     },
     $items,
     itemToString(item) {
