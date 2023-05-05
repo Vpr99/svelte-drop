@@ -42,25 +42,28 @@
 
 <div>
   <div class="container">
-    <label class="label" {...labelAttributes}>Choose your favorite book:</label>
-    <div class="search-box">
-      <input
-        use:filterInput
-        {...$filterInputAttributes}
-        placeholder="Best book ever"
-        class="input"
-      />
-      <button
-        use:triggerButton
-        {...$triggerButtonAttributes}
-        aria-label="toggle menu"
-        class="button"
-        type="button"
-      >
-        <!-- We must output these at HTML ASCII characters in order for them to render -->
-        {$isOpen ? "⬆️" : "⬇️"}
-      </button>
-    </div>
+    <label class="label" {...labelAttributes}>
+      Choose your favorite book:
+
+      <div class="search-box">
+        <input
+          use:filterInput
+          {...$filterInputAttributes}
+          placeholder="Best book ever"
+          class="input"
+        />
+        <button
+          use:triggerButton
+          {...$triggerButtonAttributes}
+          aria-label="toggle menu"
+          class="button"
+          type="button"
+        >
+          <!-- We must output these at HTML ASCII characters in order for them to render -->
+          {$isOpen ? "⬆️" : "⬇️"}
+        </button>
+      </div>
+    </label>
   </div>
   <ul
     style:--status={!($isOpen && $items.length) ? "visible" : "visible"}
@@ -94,7 +97,7 @@
   }
 
   .label {
-    width: fit-content;
+  
   }
 
   .search-box {
