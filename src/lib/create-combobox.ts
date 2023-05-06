@@ -203,6 +203,7 @@ export function createCombobox<T extends Item>(
           itemCount: props.items.length,
           moveAmount: -1,
         });
+        // @FIXME: pressing up from the bottom of the list shouldn't scroll until the selection reaches the top.
         // @TODO is this the right place for side-effects?
         document
           .getElementById(`${id}-descendent-${nextIndex}`)
