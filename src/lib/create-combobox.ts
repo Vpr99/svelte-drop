@@ -19,6 +19,7 @@ interface Combobox {
   isOpen: Readable<boolean>;
   filterInput: Action<HTMLInputElement, void>;
   triggerButton: Action<HTMLButtonElement, void>;
+  listItem: Action<HTMLLIElement, void>;
   triggerButtonAttributes: Readable<HTMLButtonAttributes>;
   filterInputAttributes: Readable<HTMLInputAttributes>;
   labelAttributes: HTMLLabelAttributes;
@@ -125,8 +126,28 @@ export function createCombobox<T extends Item>(
   function getItemProps(index: number) {
     return {
       id: `${id}-descendent-${index}`,
+      "data-index": index,
     };
   }
+
+  const listItem: Action<HTMLLIElement, void> = (node) => {
+    function highlightItem() {
+      const { index } = node.dataset;
+      if (index) {
+        const parsedIndex = parseInt(index, 10);
+        if (parsedIndex !== $store.highlightedIndex) {
+          highlightedIndex.set(parsedIndex);
+        }
+      }
+    }
+
+    node.addEventListener("mousemove", highlightItem);
+    return {
+      destroy: () => {
+        node.removeEventListener("mousemove", highlightItem);
+      },
+    };
+  };
 
   const filterInput: Action<HTMLInputElement, void> = (node) => {
     node.addEventListener("blur", close);
@@ -156,13 +177,11 @@ export function createCombobox<T extends Item>(
     if (!$store.isOpen) {
       return;
     }
-
     if (e.key === "Escape") {
       close();
       // @TODO figure out why this hack is required.
       (e.target as HTMLElement).blur();
     }
-
     if (e.key === "ArrowDown") {
       highlightedIndex.update((index) => {
         const nextIndex = getNextIndex({
@@ -194,15 +213,16 @@ export function createCombobox<T extends Item>(
   }
 
   return {
-    isOpen: readonly(isOpen),
     filterInput,
+    filterInputAttributes,
+    getItemProps,
+    highlightedIndex: readonly(highlightedIndex),
+    isOpen: readonly(isOpen),
+    labelAttributes,
+    listAttributes,
+    listItem,
     triggerButton,
     triggerButtonAttributes,
-    filterInputAttributes,
-    listAttributes,
-    labelAttributes,
-    highlightedIndex: readonly(highlightedIndex),
-    getItemProps,
   };
 }
 

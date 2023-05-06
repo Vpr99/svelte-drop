@@ -37,6 +37,7 @@
     triggerButtonAttributes,
     highlightedIndex,
     getItemProps,
+    listItem,
   } = createCombobox({ items: $items });
 </script>
 
@@ -73,6 +74,7 @@
     {#if $isOpen}
       {#each $items as item, index (index)}
         <li
+          use:listItem
           class="item"
           style:--background-color={$highlightedIndex === index
             ? "#eee"
