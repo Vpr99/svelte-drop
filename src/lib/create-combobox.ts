@@ -38,11 +38,10 @@ interface Combobox {
  * [X] clicking the button should focus the input (ish)
  * [X] up/down should be bound
  * [X] Label + other accessibility stuff
+ * [X] Keyboard navigation for pgup/pgdown/home/end
  * [ ] Disabled list items (skip highlighting, etc.)
  * [ ] Item selection
- * [ ] Keyboard navigation for pgup/pgdown/home/end
- * ...........
- * @TODO investigate passing back attribute values directly instead of using readable stores
+ * [ ] `esc` keybind to (1) close the menu and (2) then clear the input.
  */
 export function createCombobox<T extends Item>(
   props: ComboboxProps<T>
@@ -187,7 +186,48 @@ export function createCombobox<T extends Item>(
     if (e.key === "Escape") {
       close();
       // @TODO figure out why this hack is required.
-      (e.target as HTMLElement).blur();
+      // (e.target as HTMLElement).blur();
+    }
+    if (e.key === "Home") {
+      highlightedIndex.set(0);
+      // @TODO is this the right place for side-effects?
+      document.getElementById(`${id}-descendent-0`)?.scrollIntoView(false);
+    }
+    if (e.key === "End") {
+      const index = props.items.length - 1;
+      highlightedIndex.set(index);
+      // @TODO is this the right place for side-effects?
+      document
+        .getElementById(`${id}-descendent-${index}`)
+        ?.scrollIntoView(false);
+    }
+    if (e.key === "PageUp") {
+      highlightedIndex.update((index) => {
+        const nextIndex = getNextIndex({
+          currentIndex: index,
+          itemCount: props.items.length,
+          moveAmount: -10,
+        });
+        // @TODO is this the right place for side-effects?
+        document
+          .getElementById(`${id}-descendent-${nextIndex}`)
+          ?.scrollIntoView(false);
+        return nextIndex;
+      });
+    }
+    if (e.key === "PageDown") {
+      highlightedIndex.update((index) => {
+        const nextIndex = getNextIndex({
+          currentIndex: index,
+          itemCount: props.items.length,
+          moveAmount: 10,
+        });
+        // @TODO is this the right place for side-effects?
+        document
+          .getElementById(`${id}-descendent-${nextIndex}`)
+          ?.scrollIntoView(false);
+        return nextIndex;
+      });
     }
     if (e.key === "ArrowDown") {
       highlightedIndex.update((index) => {
