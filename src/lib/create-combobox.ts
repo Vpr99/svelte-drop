@@ -229,15 +229,3 @@ export function createCombobox<T extends Item>(
     triggerButtonAttributes,
   };
 }
-
-/*
-What does our combox do to start?
-
-- [x] closed by default
-- [x] has to accept an array of generics 
-- [x] infer the generic
-- [?] must be accessible
-- [?] Do we want this to be controlled or uncontrolled? (TBD- I think controlled)
-- [ ] must be filterable
-- 
-*/
