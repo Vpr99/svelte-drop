@@ -38,6 +38,9 @@ interface Combobox {
  * [X] clicking the button should focus the input (ish)
  * [X] up/down should be bound
  * [X] Label + other accessibility stuff
+ * [ ] Disabled list items (skip highlighting, etc.)
+ * [ ] Item selection
+ * [ ] Keyboard navigation for pgup/pgdown/home/end
  * ...........
  * @TODO investigate passing back attribute values directly instead of using readable stores
  */
