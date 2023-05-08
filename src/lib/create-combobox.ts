@@ -156,26 +156,29 @@ export function createCombobox<T extends Item>(
       }
     }
 
-    node.addEventListener("mousemove", highlightItem);
+    const controller = new AbortController();
+    node.addEventListener("mousemove", highlightItem, {
+      signal: controller.signal,
+    });
     return {
       destroy: () => {
-        node.removeEventListener("mousemove", highlightItem);
+        controller.abort();
       },
     };
   };
 
-  const filterInput: Action<HTMLInputElement, void> = (node) => {
-    node.addEventListener("blur", close);
-    node.addEventListener("focus", open);
-    node.addEventListener("click", open);
-    node.addEventListener("keydown", handleKeydown);
+  const filterInput: Action<HTMLInputElement, void> = (el) => {
+    const controller = new AbortController();
+    el.addEventListener("blur", close, { signal: controller.signal });
+    el.addEventListener("focus", open, { signal: controller.signal });
+    el.addEventListener("click", open, { signal: controller.signal });
+    el.addEventListener("keydown", handleKeydown, {
+      signal: controller.signal,
+    });
 
     return {
       destroy: () => {
-        node.removeEventListener("keydown", handleKeydown);
-        node.removeEventListener("blur", close);
-        node.removeEventListener("focus", open);
-        node.removeEventListener("click", open);
+        controller.abort();
       },
     };
   };
@@ -185,17 +188,20 @@ export function createCombobox<T extends Item>(
    * re-opens it. Probably because of the blur event on the input?
    */
   const triggerButton: Action<HTMLButtonElement, void> = (node) => {
-    node.addEventListener("click", toggle);
-    node.addEventListener("mousedown", onButtonMouseDown);
+    const controller = new AbortController();
+    node.addEventListener("click", toggle, { signal: controller.signal });
+    node.addEventListener("mousedown", onButtonMouseDown, {
+      signal: controller.signal,
+    });
 
     // this is important in case the user moves their cursor off of the button and then releases the mouse click
-    document.addEventListener("mouseup", onButtonMouseUp);
+    document.addEventListener("mouseup", onButtonMouseUp, {
+      signal: controller.signal,
+    });
 
     return {
       destroy: () => {
-        node.removeEventListener("click", toggle);
-        node.removeEventListener("mousedown", onButtonMouseDown);
-        document.removeEventListener("mouseup", onButtonMouseUp);
+        controller.abort();
       },
     };
   };
