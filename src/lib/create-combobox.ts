@@ -166,6 +166,10 @@ export function createCombobox<T extends Item>(
     };
   };
 
+  /**
+   * @FIXME clicking the trigger button when the menu is open closes and
+   * re-opens it. Probably because of the blur event on the input?
+   */
   const triggerButton: Action<HTMLButtonElement, void> = (node) => {
     node.addEventListener("click", toggle);
 
