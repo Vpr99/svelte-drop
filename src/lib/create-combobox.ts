@@ -49,6 +49,7 @@ export function createCombobox<T extends Item>(
   const id = nanoid();
   const isOpen = writable(false);
   const highlightedIndex = writable(-1);
+  let trapFocus = false;
 
   // @TODO change name?
   const triggerButtonAttributes = derived(isOpen, (isOpen) => ({
@@ -114,9 +115,21 @@ export function createCombobox<T extends Item>(
     });
   }
 
+  function onButtonMouseDown() {
+    trapFocus = true;
+  }
+
+  function onButtonMouseUp() {
+    trapFocus = false;
+  }
+
   // Close the menu.
   function close() {
-    isOpen.set(false);
+    // - trap focus is true when the optional button next to the input is actively being clicked
+    // - this is true for all close events, including escape
+    if (!trapFocus) {
+      isOpen.set(false);
+    }
   }
 
   // Open the menu and focus the input.
@@ -173,10 +186,16 @@ export function createCombobox<T extends Item>(
    */
   const triggerButton: Action<HTMLButtonElement, void> = (node) => {
     node.addEventListener("click", toggle);
+    node.addEventListener("mousedown", onButtonMouseDown);
+
+    // this is important in case the user moves their cursor off of the button and then releases the mouse click
+    document.addEventListener("mouseup", onButtonMouseUp);
 
     return {
       destroy: () => {
         node.removeEventListener("click", toggle);
+        node.removeEventListener("mousedown", onButtonMouseDown);
+        document.removeEventListener("mouseup", onButtonMouseUp);
       },
     };
   };
