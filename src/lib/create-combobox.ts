@@ -154,6 +154,7 @@ export function createCombobox<T extends Item>(
   const filterInput: Action<HTMLInputElement, void> = (node) => {
     node.addEventListener("blur", close);
     node.addEventListener("focus", open);
+    node.addEventListener("click", open);
     node.addEventListener("keydown", handleKeydown);
 
     return {
@@ -161,6 +162,7 @@ export function createCombobox<T extends Item>(
         node.removeEventListener("keydown", handleKeydown);
         node.removeEventListener("blur", close);
         node.removeEventListener("focus", open);
+        node.removeEventListener("click", open);
       },
     };
   };
@@ -180,9 +182,10 @@ export function createCombobox<T extends Item>(
   };
 
   function handleKeydown(e: KeyboardEvent) {
-    if (!$store.isOpen) {
-      return;
+    if (!$store.isOpen && e.key !== "Escape") {
+      open();
     }
+
     if (e.key === "Escape") {
       close();
       // @TODO figure out why this hack is required.
