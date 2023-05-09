@@ -180,7 +180,7 @@ export function createCombobox<T extends Item>({
       }
     }
 
-    function onMouseDown() {
+    function onClick() {
       const { index } = node.dataset;
       if (index) {
         const parsedIndex = parseInt(index, 10);
@@ -190,11 +190,17 @@ export function createCombobox<T extends Item>({
           document.getElementById(`${id}-input`) as HTMLInputElement
         );
 
-        setTimeout(() => {
-          document.getElementById(`${id}-input`)?.focus();
-          close();
-        }, 100);
+        document.getElementById(`${id}-input`)?.focus();
+        close();
       }
+    }
+
+    function onMouseDown() {
+      trapFocus = true;
+    }
+
+    function onMouseUp() {
+      trapFocus = false;
     }
 
     const controller = new AbortController();
@@ -203,6 +209,14 @@ export function createCombobox<T extends Item>({
     });
 
     node.addEventListener("mousedown", onMouseDown, {
+      signal: controller.signal,
+    });
+
+    node.addEventListener("mouseup", onMouseUp, {
+      signal: controller.signal,
+    });
+
+    node.addEventListener("click", onClick, {
       signal: controller.signal,
     });
 
