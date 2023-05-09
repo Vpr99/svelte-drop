@@ -17,9 +17,10 @@ interface ComboboxProps<T extends Item> {
   scrollAlignment?: "nearest" | "center";
   itemToString: (item: T) => string;
   filterFunction: (value: string) => void;
+  selectItem: (item: T) => void;
 }
 
-interface Combobox {
+interface Combobox<T> {
   isOpen: Readable<boolean>;
   filterInput: Action<HTMLInputElement, void>;
   triggerButton: Action<HTMLButtonElement, void>;
@@ -31,6 +32,7 @@ interface Combobox {
     HTMLUListElement | HTMLOListElement | HTMLDListElement
   >;
   highlightedIndex: Readable<number>;
+  selectedItem: Readable<T>;
   getItemProps: (index: number) => HTMLLiAttributes;
 }
 
@@ -53,9 +55,11 @@ export function createCombobox<T extends Item>({
   scrollAlignment = "nearest",
   itemToString,
   filterFunction,
-}: ComboboxProps<T>): Combobox {
+  selectItem,
+}: ComboboxProps<T>): Combobox<T> {
   const id = nanoid(6);
   const isOpen = writable(false);
+  const selectedItem = writable<T>(undefined);
   const highlightedIndex = writable(-1);
   let trapFocus = false;
 
@@ -123,14 +127,6 @@ export function createCombobox<T extends Item>({
     });
   }
 
-  function onButtonMouseDown() {
-    trapFocus = true;
-  }
-
-  function onButtonMouseUp() {
-    trapFocus = false;
-  }
-
   // Close the menu.
   function close() {
     // - trap focus is true when the optional button next to the input is actively being clicked
@@ -153,6 +149,18 @@ export function createCombobox<T extends Item>({
     };
   }
 
+  function setSelectedItem(index: number, input: HTMLInputElement | null) {
+    const string = itemToString(items[index]);
+    selectedItem.set(items[index]);
+
+    selectItem(items[index]);
+    filterFunction(string);
+
+    if (input) {
+      input.value = string;
+    }
+  }
+
   const listItem: Action<HTMLLIElement, void> = (node) => {
     function highlightItem() {
       const { index } = node.dataset;
@@ -164,10 +172,46 @@ export function createCombobox<T extends Item>({
       }
     }
 
+    function onClick() {
+      const { index } = node.dataset;
+      if (index) {
+        const parsedIndex = parseInt(index, 10);
+
+        setSelectedItem(
+          parsedIndex,
+          document.getElementById(`${id}-input`) as HTMLInputElement
+        );
+
+        document.getElementById(`${id}-input`)?.focus();
+        close();
+      }
+    }
+
+    function onMouseDown() {
+      trapFocus = true;
+    }
+
+    function onMouseUp() {
+      trapFocus = false;
+    }
+
     const controller = new AbortController();
-    node.addEventListener("mousemove", highlightItem, {
+    node.addEventListener("mouseenter", highlightItem, {
       signal: controller.signal,
     });
+
+    node.addEventListener("mousedown", onMouseDown, {
+      signal: controller.signal,
+    });
+
+    document.addEventListener("mouseup", onMouseUp, {
+      signal: controller.signal,
+    });
+
+    node.addEventListener("click", onClick, {
+      signal: controller.signal,
+    });
+
     return {
       destroy: () => {
         controller.abort();
@@ -176,12 +220,10 @@ export function createCombobox<T extends Item>({
   };
 
   const filterInput: Action<HTMLInputElement, void> = (node) => {
-    // here
-    // @TODO: make `direction` a combobox parameter
     function scrollToItem(index: number) {
       const el = document.getElementById(`${id}-descendent-${index}`);
+
       if (el) {
-        // false scrolls from the bottom, but we can optimize
         el.scrollIntoView({
           block: scrollAlignment,
         });
@@ -196,6 +238,13 @@ export function createCombobox<T extends Item>({
       if (e.key === "Escape") {
         close();
       }
+
+      if (e.key === "Enter") {
+        setSelectedItem($store.highlightedIndex, e.target as HTMLInputElement);
+
+        close();
+      }
+
       if (e.key === "Home") {
         highlightedIndex.set(0);
         scrollToItem(0);
@@ -275,11 +324,15 @@ export function createCombobox<T extends Item>({
     };
   };
 
-  /**
-   * @FIXME clicking the trigger button when the menu is open closes and
-   * re-opens it. Probably because of the blur event on the input?
-   */
   const triggerButton: Action<HTMLButtonElement, void> = (node) => {
+    function onButtonMouseDown() {
+      trapFocus = true;
+    }
+
+    function onButtonMouseUp() {
+      trapFocus = false;
+    }
+
     const controller = new AbortController();
     node.addEventListener("click", toggle, { signal: controller.signal });
     node.addEventListener("mousedown", onButtonMouseDown, {
@@ -302,6 +355,7 @@ export function createCombobox<T extends Item>({
     filterInput,
     filterInputAttributes,
     getItemProps,
+    selectedItem: readonly(selectedItem),
     highlightedIndex: readonly(highlightedIndex),
     isOpen: readonly(isOpen),
     labelAttributes,
