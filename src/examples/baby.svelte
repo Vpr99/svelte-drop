@@ -38,6 +38,7 @@
     filterInputAttributes,
     triggerButtonAttributes,
     highlightedIndex,
+    selectedItem,
     getItemProps,
     listItem,
   } = createCombobox({
@@ -48,9 +49,10 @@
     itemToString(item) {
       return item ? item.title : "";
     },
-    // onSelectedItemChange: ({selectedItem: newSelectedItem}) =>
-    //   setSelectedItem(newSelectedItem),
-    // });
+    selectItem: (item) => {
+      console.log(item);
+      // setSelectedItem(item),
+    },
   });
 </script>
 
@@ -89,12 +91,12 @@
         <li
           use:listItem
           class="item"
+          style:--font-weight={$selectedItem === item ? "700" : "400"}
           style:--background-color={$highlightedIndex === index
             ? "#eee"
             : "transparent"}
           {...getItemProps(index)}
         >
-          <!-- style:--font-weight={$selectedItem === item ? "700" : "400"} -->
           <span>{item.title}</span>
           <span class="item-author">{item.author}</span>
         </li>
