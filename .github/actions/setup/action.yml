@@ -10,3 +10,4 @@ runs:
         node-version: 18
         cache: pnpm
     - run: pnpm install
+      shell: bash
