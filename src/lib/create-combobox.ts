@@ -46,7 +46,7 @@ interface Combobox {
 export function createCombobox<T extends Item>(
   props: ComboboxProps<T>
 ): Combobox {
-  const id = nanoid();
+  const id = nanoid(6);
   const isOpen = writable(false);
   const highlightedIndex = writable(-1);
   let trapFocus = false;

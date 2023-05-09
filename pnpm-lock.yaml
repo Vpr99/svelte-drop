@@ -7,7 +7,7 @@ dependencies:
 
 devDependencies:
   '@changesets/cli':
-    specifier: ^2.26.1
+    specifier: 2.26.1
     version: 2.26.1
   '@sveltejs/adapter-auto':
     specifier: 2.0.1
