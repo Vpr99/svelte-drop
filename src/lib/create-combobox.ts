@@ -3,6 +3,7 @@ import { writable, type Readable, derived, readonly } from "svelte/store";
 import { getNextIndex } from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
+  ChangeEventHandler,
   HTMLAttributes,
   HTMLButtonAttributes,
   HTMLInputAttributes,
@@ -13,6 +14,10 @@ import type {
 type Item = Record<string, unknown>;
 interface ComboboxProps<T extends Item> {
   items: T[];
+  /** @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block */
+  scrollAlignment?: "nearest" | "center";
+  itemToString: (item: T) => string;
+  filterFunction: (value: string) => void;
 }
 
 interface Combobox {
@@ -39,13 +44,17 @@ interface Combobox {
  * [X] up/down should be bound
  * [X] Label + other accessibility stuff
  * [X] Keyboard navigation for pgup/pgdown/home/end
+ * [X] scroll options
  * [ ] Disabled list items (skip highlighting, etc.)
  * [ ] Item selection
  * [ ] `esc` keybind to (1) close the menu and (2) then clear the input.
  */
-export function createCombobox<T extends Item>(
-  props: ComboboxProps<T>
-): Combobox {
+export function createCombobox<T extends Item>({
+  items,
+  scrollAlignment = "nearest",
+  itemToString,
+  filterFunction,
+}: ComboboxProps<T>): Combobox {
   const id = nanoid(6);
   const isOpen = writable(false);
   const highlightedIndex = writable(-1);
@@ -168,11 +177,103 @@ export function createCombobox<T extends Item>(
   };
 
   const filterInput: Action<HTMLInputElement, void> = (el) => {
+    // here
+    // @TODO: make `direction` a combobox parameter
+    function scrollToItem(index: number) {
+      const el = document.getElementById(`${id}-descendent-${index}`);
+      if (el) {
+        // false scrolls from the bottom, but we can optimize
+        el.scrollIntoView({
+          block: scrollAlignment,
+        });
+      }
+    }
+
+    function handleKeydown(e: KeyboardEvent) {
+      if (!$store.isOpen && e.key !== "Escape") {
+        open();
+      }
+
+      if (e.key === "Escape") {
+        close();
+        // @TODO figure out why this hack is required.
+        // (e.target as HTMLElement).blur();
+      }
+      if (e.key === "Home") {
+        highlightedIndex.set(0);
+        // @TODO is this the right place for side-effects?
+        document.getElementById(`${id}-descendent-0`)?.scrollIntoView(false);
+
+        scrollToItem(0);
+      }
+      if (e.key === "End") {
+        const nextIndex = items.length - 1;
+        highlightedIndex.set(nextIndex);
+
+        scrollToItem(nextIndex);
+      }
+      if (e.key === "PageUp") {
+        highlightedIndex.update((index) => {
+          const nextIndex = getNextIndex({
+            currentIndex: index,
+            itemCount: items.length,
+            moveAmount: -10,
+          });
+
+          scrollToItem(nextIndex);
+          return nextIndex;
+        });
+      }
+      if (e.key === "PageDown") {
+        highlightedIndex.update((index) => {
+          const nextIndex = getNextIndex({
+            currentIndex: index,
+            itemCount: items.length,
+            moveAmount: 10,
+          });
+
+          scrollToItem(nextIndex);
+          return nextIndex;
+        });
+      }
+      if (e.key === "ArrowDown") {
+        highlightedIndex.update((index) => {
+          const nextIndex = getNextIndex({
+            currentIndex: index,
+            itemCount: items.length,
+            moveAmount: 1,
+          });
+          scrollToItem(nextIndex);
+          return nextIndex;
+        });
+      }
+      if (e.key === "ArrowUp") {
+        highlightedIndex.update((index) => {
+          const nextIndex = getNextIndex({
+            currentIndex: index,
+            itemCount: items.length,
+            moveAmount: -1,
+          });
+          scrollToItem(nextIndex);
+          return nextIndex;
+        });
+      }
+    }
+
+    // @TODO: throttle this value
+    function handleInput(e: Event) {
+      const value = (e.target as HTMLInputElement).value;
+      filterFunction(value);
+    }
+
     const controller = new AbortController();
     el.addEventListener("blur", close, { signal: controller.signal });
     el.addEventListener("focus", open, { signal: controller.signal });
     el.addEventListener("click", open, { signal: controller.signal });
     el.addEventListener("keydown", handleKeydown, {
+      signal: controller.signal,
+    });
+    el.addEventListener("input", handleInput, {
       signal: controller.signal,
     });
 
@@ -205,88 +306,6 @@ export function createCombobox<T extends Item>(
       },
     };
   };
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (!$store.isOpen && e.key !== "Escape") {
-      open();
-    }
-
-    if (e.key === "Escape") {
-      close();
-      // @TODO figure out why this hack is required.
-      // (e.target as HTMLElement).blur();
-    }
-    if (e.key === "Home") {
-      highlightedIndex.set(0);
-      // @TODO is this the right place for side-effects?
-      document.getElementById(`${id}-descendent-0`)?.scrollIntoView(false);
-    }
-    if (e.key === "End") {
-      const index = props.items.length - 1;
-      highlightedIndex.set(index);
-      // @TODO is this the right place for side-effects?
-      document
-        .getElementById(`${id}-descendent-${index}`)
-        ?.scrollIntoView(false);
-    }
-    if (e.key === "PageUp") {
-      highlightedIndex.update((index) => {
-        const nextIndex = getNextIndex({
-          currentIndex: index,
-          itemCount: props.items.length,
-          moveAmount: -10,
-        });
-        // @TODO is this the right place for side-effects?
-        document
-          .getElementById(`${id}-descendent-${nextIndex}`)
-          ?.scrollIntoView(false);
-        return nextIndex;
-      });
-    }
-    if (e.key === "PageDown") {
-      highlightedIndex.update((index) => {
-        const nextIndex = getNextIndex({
-          currentIndex: index,
-          itemCount: props.items.length,
-          moveAmount: 10,
-        });
-        // @TODO is this the right place for side-effects?
-        document
-          .getElementById(`${id}-descendent-${nextIndex}`)
-          ?.scrollIntoView(false);
-        return nextIndex;
-      });
-    }
-    if (e.key === "ArrowDown") {
-      highlightedIndex.update((index) => {
-        const nextIndex = getNextIndex({
-          currentIndex: index,
-          itemCount: props.items.length,
-          moveAmount: 1,
-        });
-        // @TODO is this the right place for side-effects?
-        document
-          .getElementById(`${id}-descendent-${nextIndex}`)
-          ?.scrollIntoView(false);
-        return nextIndex;
-      });
-    }
-    if (e.key === "ArrowUp") {
-      highlightedIndex.update((index) => {
-        const nextIndex = getNextIndex({
-          currentIndex: index,
-          itemCount: props.items.length,
-          moveAmount: -1,
-        });
-        // @FIXME: pressing up from the bottom of the list shouldn't scroll until the selection reaches the top.
-        // @TODO is this the right place for side-effects?
-        document
-          .getElementById(`${id}-descendent-${nextIndex}`)
-          ?.scrollIntoView(false);
-        return nextIndex;
-      });
-    }
-  }
 
   return {
     filterInput,

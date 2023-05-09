@@ -2,7 +2,7 @@
   import { writable } from "svelte/store";
   import { createCombobox } from "$lib/index.js";
 
-  const items = writable([
+  const books = [
     { author: "Harper Lee", title: "To Kill a Mockingbird" },
     { author: "Lev Tolstoy", title: "War and Peace" },
     { author: "Fyodor Dostoyevsy", title: "The Idiot" },
@@ -13,19 +13,21 @@
     { author: "Fyodor Dostoevsky", title: "The Brothers Karamazov" },
     { author: "Lev Tolstoy", title: "Anna Karenina" },
     { author: "Fyodor Dostoevsky", title: "Crime and Punishment" },
-  ]);
+  ];
 
-  // function getBooksFilter(inputValue) {
-  //   const lowerCasedInputValue = inputValue.toLowerCase();
+  const items = writable(books);
 
-  //   return function booksFilter(book) {
-  //     return (
-  //       !inputValue ||
-  //       book.title.toLowerCase().includes(lowerCasedInputValue) ||
-  //       book.author.toLowerCase().includes(lowerCasedInputValue)
-  //     );
-  //   };
-  // }
+  function getBooksFilter(inputValue: string) {
+    const lowerCasedInputValue = inputValue.toLowerCase();
+
+    return function booksFilter(book: any) {
+      return (
+        !inputValue ||
+        book.title.toLowerCase().includes(lowerCasedInputValue) ||
+        book.author.toLowerCase().includes(lowerCasedInputValue)
+      );
+    };
+  }
 
   const {
     isOpen,
@@ -38,7 +40,18 @@
     highlightedIndex,
     getItemProps,
     listItem,
-  } = createCombobox({ items: $items });
+  } = createCombobox({
+    items: $items,
+    filterFunction(value) {
+      items.set(books.filter(getBooksFilter(value)));
+    },
+    itemToString(item) {
+      return item ? item.title : "";
+    },
+    // onSelectedItemChange: ({selectedItem: newSelectedItem}) =>
+    //   setSelectedItem(newSelectedItem),
+    // });
+  });
 </script>
 
 <div>
