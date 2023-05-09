@@ -1,0 +1,25 @@
+name: Integration
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v3
+      - name: ⚙️ Setup
+        uses: ./.github/actions/setup
+      - name: 🛡️ Type-check
+        run: pnpm check
+      - name: 🔦 Lint
+        run: pnpm lint
+      - name: 🧪 Test
+        run: pnpm test

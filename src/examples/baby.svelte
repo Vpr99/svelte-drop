@@ -56,7 +56,7 @@
 
 <div>
   <div class="container">
-    <label class="label" {...labelAttributes}>
+    <label {...labelAttributes}>
       Choose your favorite book:
 
       <div class="search-box">
@@ -109,9 +109,6 @@
     flex-direction: column;
     gap: 0.25rem;
     width: 18rem;
-  }
-
-  .label {
   }
 
   .search-box {
