@@ -127,14 +127,6 @@ export function createCombobox<T extends Item>({
     });
   }
 
-  function onButtonMouseDown() {
-    trapFocus = true;
-  }
-
-  function onButtonMouseUp() {
-    trapFocus = false;
-  }
-
   // Close the menu.
   function close() {
     // - trap focus is true when the optional button next to the input is actively being clicked
@@ -212,7 +204,7 @@ export function createCombobox<T extends Item>({
       signal: controller.signal,
     });
 
-    node.addEventListener("mouseup", onMouseUp, {
+    document.addEventListener("mouseup", onMouseUp, {
       signal: controller.signal,
     });
 
@@ -230,6 +222,7 @@ export function createCombobox<T extends Item>({
   const filterInput: Action<HTMLInputElement, void> = (node) => {
     function scrollToItem(index: number) {
       const el = document.getElementById(`${id}-descendent-${index}`);
+
       if (el) {
         el.scrollIntoView({
           block: scrollAlignment,
@@ -332,6 +325,14 @@ export function createCombobox<T extends Item>({
   };
 
   const triggerButton: Action<HTMLButtonElement, void> = (node) => {
+    function onButtonMouseDown() {
+      trapFocus = true;
+    }
+
+    function onButtonMouseUp() {
+      trapFocus = false;
+    }
+
     const controller = new AbortController();
     node.addEventListener("click", toggle, { signal: controller.signal });
     node.addEventListener("mousedown", onButtonMouseDown, {
