@@ -3,7 +3,6 @@ import { writable, type Readable, derived, readonly } from "svelte/store";
 import { getNextIndex } from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
-  ChangeEventHandler,
   HTMLAttributes,
   HTMLButtonAttributes,
   HTMLInputAttributes,
@@ -176,7 +175,7 @@ export function createCombobox<T extends Item>({
     };
   };
 
-  const filterInput: Action<HTMLInputElement, void> = (el) => {
+  const filterInput: Action<HTMLInputElement, void> = (node) => {
     // here
     // @TODO: make `direction` a combobox parameter
     function scrollToItem(index: number) {
@@ -196,20 +195,14 @@ export function createCombobox<T extends Item>({
 
       if (e.key === "Escape") {
         close();
-        // @TODO figure out why this hack is required.
-        // (e.target as HTMLElement).blur();
       }
       if (e.key === "Home") {
         highlightedIndex.set(0);
-        // @TODO is this the right place for side-effects?
-        document.getElementById(`${id}-descendent-0`)?.scrollIntoView(false);
-
         scrollToItem(0);
       }
       if (e.key === "End") {
         const nextIndex = items.length - 1;
         highlightedIndex.set(nextIndex);
-
         scrollToItem(nextIndex);
       }
       if (e.key === "PageUp") {
@@ -219,7 +212,6 @@ export function createCombobox<T extends Item>({
             itemCount: items.length,
             moveAmount: -10,
           });
-
           scrollToItem(nextIndex);
           return nextIndex;
         });
@@ -231,7 +223,6 @@ export function createCombobox<T extends Item>({
             itemCount: items.length,
             moveAmount: 10,
           });
-
           scrollToItem(nextIndex);
           return nextIndex;
         });
@@ -267,13 +258,13 @@ export function createCombobox<T extends Item>({
     }
 
     const controller = new AbortController();
-    el.addEventListener("blur", close, { signal: controller.signal });
-    el.addEventListener("focus", open, { signal: controller.signal });
-    el.addEventListener("click", open, { signal: controller.signal });
-    el.addEventListener("keydown", handleKeydown, {
+    node.addEventListener("blur", close, { signal: controller.signal });
+    node.addEventListener("focus", open, { signal: controller.signal });
+    node.addEventListener("click", open, { signal: controller.signal });
+    node.addEventListener("keydown", handleKeydown, {
       signal: controller.signal,
     });
-    el.addEventListener("input", handleInput, {
+    node.addEventListener("input", handleInput, {
       signal: controller.signal,
     });
 
