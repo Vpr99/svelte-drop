@@ -352,7 +352,6 @@ export function createCombobox<T extends Item>({
     const controller = new AbortController();
     node.addEventListener("blur", close, { signal: controller.signal });
     node.addEventListener("focus", open, { signal: controller.signal });
-    node.addEventListener("click", open, { signal: controller.signal });
     node.addEventListener("keydown", handleKeydown, {
       signal: controller.signal,
     });
