@@ -1,6 +1,6 @@
 import type { Action } from "svelte/action";
 import { writable, type Readable, derived, readonly } from "svelte/store";
-import { getNextIndex } from "./utils.js";
+import { getNextIndex, interactionKeys, keyboardKeys } from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
   HTMLAttributes,
@@ -233,61 +233,39 @@ export function createCombobox<T extends Item>({
     let isAltKeyDown = false;
 
     function handleKeydown(e: KeyboardEvent) {
-      console.log(e.key);
-      if (
-        !$store.isOpen &&
-        ![
-          "Escape",
-          "ArrowLeft",
-          "ArrowRight",
-          "Shift",
-          "CapsLock",
-          "Control",
-          "Alt",
-          "Meta",
-          "Enter",
-          "BackSpace",
-          "F1",
-          "F2",
-          "F3",
-          "F4",
-          "F5",
-          "F6",
-          "F7",
-          "F8",
-          "F9",
-          "F10",
-          "F11",
-          "F12",
-        ].includes(e.key)
-      ) {
+      if (!$store.isOpen && interactionKeys.includes(e.key)) {
+        // necessary to prevent the rest of this function from firing
+        return;
+      }
+
+      if (!$store.isOpen) {
         open();
       }
 
-      if (e.key === "Alt") {
+      if (e.key === keyboardKeys.Alt) {
         isAltKeyDown = true;
       }
 
-      if (e.key === "Escape") {
+      if (e.key === keyboardKeys.Escape) {
         close();
       }
 
-      if (e.key === "Enter") {
+      if (e.key === keyboardKeys.Enter) {
         setSelectedItem($store.highlightedIndex, e.target as HTMLInputElement);
 
         close();
       }
 
-      if (e.key === "Home") {
+      if (e.key === keyboardKeys.Home) {
         highlightedIndex.set(0);
         scrollToItem(0);
       }
-      if (e.key === "End") {
+      if (e.key === keyboardKeys.End) {
         const nextIndex = items.length - 1;
         highlightedIndex.set(nextIndex);
         scrollToItem(nextIndex);
       }
-      if (e.key === "PageUp") {
+      if (e.key === keyboardKeys.PageUp) {
         highlightedIndex.update((index) => {
           const nextIndex = getNextIndex({
             currentIndex: index,
@@ -298,7 +276,7 @@ export function createCombobox<T extends Item>({
           return nextIndex;
         });
       }
-      if (e.key === "PageDown") {
+      if (e.key === keyboardKeys.PageDown) {
         highlightedIndex.update((index) => {
           const nextIndex = getNextIndex({
             currentIndex: index,
@@ -309,7 +287,7 @@ export function createCombobox<T extends Item>({
           return nextIndex;
         });
       }
-      if (e.key === "ArrowDown") {
+      if (e.key === keyboardKeys.ArrowDown) {
         highlightedIndex.update((index) => {
           const nextIndex = getNextIndex({
             currentIndex: index,
@@ -320,7 +298,7 @@ export function createCombobox<T extends Item>({
           return nextIndex;
         });
       }
-      if (e.key === "ArrowUp") {
+      if (e.key === keyboardKeys.ArrowUp) {
         if (isAltKeyDown) {
           close();
         } else {
