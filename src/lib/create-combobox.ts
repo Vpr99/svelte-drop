@@ -230,9 +230,42 @@ export function createCombobox<T extends Item>({
       }
     }
 
+    let isAltKeyDown = false;
+
     function handleKeydown(e: KeyboardEvent) {
-      if (!$store.isOpen && e.key !== "Escape") {
+      console.log(e.key);
+      if (
+        !$store.isOpen &&
+        ![
+          "Escape",
+          "ArrowLeft",
+          "ArrowRight",
+          "Shift",
+          "CapsLock",
+          "Control",
+          "Alt",
+          "Meta",
+          "Enter",
+          "BackSpace",
+          "F1",
+          "F2",
+          "F3",
+          "F4",
+          "F5",
+          "F6",
+          "F7",
+          "F8",
+          "F9",
+          "F10",
+          "F11",
+          "F12",
+        ].includes(e.key)
+      ) {
         open();
+      }
+
+      if (e.key === "Alt") {
+        isAltKeyDown = true;
       }
 
       if (e.key === "Escape") {
@@ -288,15 +321,25 @@ export function createCombobox<T extends Item>({
         });
       }
       if (e.key === "ArrowUp") {
-        highlightedIndex.update((index) => {
-          const nextIndex = getNextIndex({
-            currentIndex: index,
-            itemCount: items.length,
-            moveAmount: -1,
+        if (isAltKeyDown) {
+          close();
+        } else {
+          highlightedIndex.update((index) => {
+            const nextIndex = getNextIndex({
+              currentIndex: index,
+              itemCount: items.length,
+              moveAmount: -1,
+            });
+            scrollToItem(nextIndex);
+            return nextIndex;
           });
-          scrollToItem(nextIndex);
-          return nextIndex;
-        });
+        }
+      }
+    }
+
+    function handleKeyUp(e: KeyboardEvent) {
+      if (e.key === "Alt") {
+        isAltKeyDown = false;
       }
     }
 
@@ -311,6 +354,9 @@ export function createCombobox<T extends Item>({
     node.addEventListener("focus", open, { signal: controller.signal });
     node.addEventListener("click", open, { signal: controller.signal });
     node.addEventListener("keydown", handleKeydown, {
+      signal: controller.signal,
+    });
+    node.addEventListener("keyup", handleKeyUp, {
       signal: controller.signal,
     });
     node.addEventListener("input", handleInput, {
