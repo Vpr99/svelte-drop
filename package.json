@@ -64,7 +64,6 @@
     "vite": "4.3.5",
     "vitest": "0.31.0"
   },
-  "svelte": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
   "dependencies": {
