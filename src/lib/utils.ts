@@ -57,7 +57,7 @@ export const keyboardKeys = {
   Alt: "Alt",
   Meta: "Meta",
   Enter: "Enter",
-  BackSpace: "BackSpace",
+  Backspace: "Backspace",
   F1: "F1",
   F2: "F2",
   F3: "F3",
@@ -72,7 +72,7 @@ export const keyboardKeys = {
   F12: "F12",
 };
 
-export const interactionKeys = [
+export const interactionKeys = new Set([
   keyboardKeys.Escape,
   keyboardKeys.ArrowLeft,
   keyboardKeys.ArrowRight,
@@ -82,7 +82,7 @@ export const interactionKeys = [
   keyboardKeys.Alt,
   keyboardKeys.Meta,
   keyboardKeys.Enter,
-  keyboardKeys.BackSpace,
+  keyboardKeys.Backspace,
   keyboardKeys.F1,
   keyboardKeys.F2,
   keyboardKeys.F3,
@@ -95,4 +95,4 @@ export const interactionKeys = [
   keyboardKeys.F10,
   keyboardKeys.F11,
   keyboardKeys.F12,
-];
+]);

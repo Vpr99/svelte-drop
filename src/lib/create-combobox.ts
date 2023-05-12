@@ -230,20 +230,16 @@ export function createCombobox<T extends Item>({
       }
     }
 
-    let isAltKeyDown = false;
-
     function handleKeydown(e: KeyboardEvent) {
-      if (!$store.isOpen && interactionKeys.includes(e.key)) {
+      console.log("EE", e);
+
+      if (!$store.isOpen && interactionKeys.has(e.key)) {
         // necessary to prevent the rest of this function from firing
         return;
       }
 
       if (!$store.isOpen) {
         open();
-      }
-
-      if (e.key === keyboardKeys.Alt) {
-        isAltKeyDown = true;
       }
 
       if (e.key === keyboardKeys.Escape) {
@@ -299,7 +295,7 @@ export function createCombobox<T extends Item>({
         });
       }
       if (e.key === keyboardKeys.ArrowUp) {
-        if (isAltKeyDown) {
+        if (e.altKey) {
           close();
         } else {
           highlightedIndex.update((index) => {
@@ -315,12 +311,6 @@ export function createCombobox<T extends Item>({
       }
     }
 
-    function handleKeyUp(e: KeyboardEvent) {
-      if (e.key === "Alt") {
-        isAltKeyDown = false;
-      }
-    }
-
     // @TODO: throttle this value
     function handleInput(e: Event) {
       const value = (e.target as HTMLInputElement).value;
@@ -331,9 +321,6 @@ export function createCombobox<T extends Item>({
     node.addEventListener("blur", close, { signal: controller.signal });
     node.addEventListener("focus", open, { signal: controller.signal });
     node.addEventListener("keydown", handleKeydown, {
-      signal: controller.signal,
-    });
-    node.addEventListener("keyup", handleKeyUp, {
       signal: controller.signal,
     });
     node.addEventListener("input", handleInput, {
