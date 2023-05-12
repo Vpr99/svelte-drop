@@ -21,15 +21,11 @@ Now, inside your markdown files you can use the `<Button>` component like so:
 <Button />
 
 <!-- Or, use a markdown container. -->
-:::button propA="valueA"|propB=10
-Default slot content here.
-:::
+:::button propA="valueA"|propB=10 Default slot content here. :::
 
 <!-- You can pass in dynamic slot elements! -->
 <!-- If you omit `tag`, it'll default to `<p>`. -->
-:::button (tag=h1&slot=title)=Title
-Default slot content here.
-:::
+:::button (tag=h1&slot=title)=Title Default slot content here. :::
 ```
 
 ### Configuration
@@ -43,13 +39,13 @@ kitDocsPlugin({
     components: [
       // Override inline rule.
       // `Image.svelte` must be a global component.
-      { name: 'Image', type: 'inline', rule: 'image' },
+      { name: "Image", type: "inline", rule: "image" },
       // Override block rule.
       // `Blockquote.svelte` must be a global component.
-      { name: 'Blockquote', type: 'block', rule: 'blockquote' },
+      { name: "Blockquote", type: "block", rule: "blockquote" },
       // Create custom container.
       // `Button.svelte` must be a global component.
-      { name: 'Button', type: 'custom', container: { marker: '!' } },
+      { name: "Button", type: "custom", container: { marker: "!" } },
     ],
   },
 });
@@ -70,13 +66,9 @@ The configuration above will transform the following Markdown like so:
 ```svelte
 <Image href="https://..." alt="alt text" />
 
-<Blockquote>
-  This is a blockquote.
-</Blockquote>
+<Blockquote>This is a blockquote.</Blockquote>
 
-<Button>
-  ...
-</Button>
+<Button>...</Button>
 ```
 
 ## Default Components
