@@ -31,12 +31,10 @@
 
   const {
     isOpen,
-    triggerButton,
     filterInput,
     labelAttributes,
     listAttributes,
     filterInputAttributes,
-    triggerButtonAttributes,
     highlightedIndex,
     selectedItem,
     getItemProps,
@@ -64,16 +62,8 @@
           placeholder="Best book ever"
           class="input"
         />
-        <button
-          use:triggerButton
-          {...$triggerButtonAttributes}
-          aria-label="toggle menu"
-          class="button"
-          type="button"
-        >
-          <!-- We must output these at HTML ASCII characters in order for them to render -->
-          {$isOpen ? "⬆️" : "⬇️"}
-        </button>
+        <!-- We must output these at HTML ASCII characters in order for them to render -->
+        {$isOpen ? "⬆️" : "⬇️"}
       </div>
     </label>
   </div>

@@ -29,9 +29,7 @@ interface ComboboxProps<T extends Item> {
 interface Combobox<T> {
   isOpen: Readable<boolean>;
   filterInput: Action<HTMLInputElement, void>;
-  triggerButton: Action<HTMLButtonElement, void>;
   listItem: Action<HTMLLIElement, void>;
-  triggerButtonAttributes: Readable<HTMLButtonAttributes>;
   filterInputAttributes: Readable<HTMLInputAttributes>;
   labelAttributes: HTMLLabelAttributes;
   listAttributes: HTMLAttributes<
@@ -68,15 +66,6 @@ export function createCombobox<T extends Item>({
   const selectedItem = writable<T>(undefined);
   const highlightedIndex = writable(-1);
   let trapFocus = false;
-
-  // @TODO change name?
-  const triggerButtonAttributes = derived(isOpen, (isOpen) => ({
-    "aria-controls": `${id}-menu`,
-    "aria-expanded": isOpen,
-    "aria-haspopup": true,
-    id: `${id}-button`,
-    tabIndex: "-1",
-  }));
 
   const labelAttributes = {
     id: `${id}-label`,
@@ -354,33 +343,6 @@ export function createCombobox<T extends Item>({
     };
   };
 
-  const triggerButton: Action<HTMLButtonElement, void> = (node) => {
-    function onButtonMouseDown() {
-      trapFocus = true;
-    }
-
-    function onButtonMouseUp() {
-      trapFocus = false;
-    }
-
-    const controller = new AbortController();
-    node.addEventListener("click", toggle, { signal: controller.signal });
-    node.addEventListener("mousedown", onButtonMouseDown, {
-      signal: controller.signal,
-    });
-
-    // this is important in case the user moves their cursor off of the button and then releases the mouse click
-    document.addEventListener("mouseup", onButtonMouseUp, {
-      signal: controller.signal,
-    });
-
-    return {
-      destroy: () => {
-        controller.abort();
-      },
-    };
-  };
-
   return {
     filterInput,
     filterInputAttributes,
@@ -391,7 +353,5 @@ export function createCombobox<T extends Item>({
     labelAttributes,
     listAttributes,
     listItem,
-    triggerButton,
-    triggerButtonAttributes,
   };
 }
