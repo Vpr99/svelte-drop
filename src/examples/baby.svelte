@@ -47,6 +47,8 @@
       const filteredItems = books.filter(getBooksFilter(value));
       items.set(filteredItems);
       return filteredItems;
+
+      // items.set(books.filter(getBooksFilter(value)));
     },
     itemToString(item) {
       return item ? item.title : "";
