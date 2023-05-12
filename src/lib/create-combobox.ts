@@ -10,7 +10,6 @@ import { getNextIndex, interactionKeys, keyboardKeys } from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
   HTMLAttributes,
-  HTMLButtonAttributes,
   HTMLInputAttributes,
   HTMLLabelAttributes,
   HTMLLiAttributes,
@@ -114,16 +113,6 @@ export function createCombobox<T extends Item>({
         role: "combobox",
       } as const)
   );
-
-  // Toggle menu visibility.
-  function toggle() {
-    isOpen.update((value) => !value);
-    isOpen.subscribe((value) => {
-      if (value === true) {
-        document?.getElementById(`${id}-input`)?.focus();
-      }
-    });
-  }
 
   // Close the menu.
   function close() {
