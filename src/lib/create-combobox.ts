@@ -1,5 +1,11 @@
 import type { Action } from "svelte/action";
-import { writable, type Readable, derived, readonly } from "svelte/store";
+import {
+  writable,
+  type Readable,
+  type Writable,
+  derived,
+  readonly,
+} from "svelte/store";
 import { getNextIndex, interactionKeys, keyboardKeys } from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
@@ -12,7 +18,7 @@ import type {
 
 type Item = Record<string, unknown>;
 interface ComboboxProps<T extends Item> {
-  items: Readable<T[]>;
+  items: Writable<T[]>;
   /** @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block */
   scrollAlignment?: "nearest" | "center";
   itemToString: (item: T) => string;
@@ -35,10 +41,6 @@ interface Combobox<T> {
   selectedItem: Readable<T>;
   getItemProps: (index: number) => HTMLLiAttributes;
 }
-
-/**
- * Gist of what we're making is abstracting key/mouse interactions + managing a big derived store
- */
 
 /**
  * minimumest viable combobox
@@ -101,6 +103,7 @@ export function createCombobox<T extends Item>({
     })
   );
 
+  // @TODO: unsure if we need to unsubscribe from this value when the component using `createCombobox` is unmounted
   state.subscribe((value) => {
     $store = value;
   });
