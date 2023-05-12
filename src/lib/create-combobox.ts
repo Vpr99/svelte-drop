@@ -15,8 +15,7 @@ import type {
   HTMLLiAttributes,
 } from "svelte/elements";
 
-type Item = Record<string, unknown>;
-interface ComboboxProps<T extends Item> {
+interface ComboboxProps<T> {
   items: Writable<T[]>;
   /** @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block */
   scrollAlignment?: "nearest" | "center";
@@ -53,7 +52,7 @@ interface Combobox<T> {
  * [ ] Item selection
  * [ ] `esc` keybind to (1) close the menu and (2) then clear the input.
  */
-export function createCombobox<T extends Item>({
+export function createCombobox<T>({
   items,
   scrollAlignment = "nearest",
   itemToString,

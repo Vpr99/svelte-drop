@@ -2,7 +2,12 @@
   import { writable } from "svelte/store";
   import { createCombobox } from "$lib/index.js";
 
-  const books = [
+  interface Book {
+    author: string;
+    title: string;
+  }
+
+  const books: Book[] = [
     { author: "Harper Lee", title: "To Kill a Mockingbird" },
     { author: "Lev Tolstoy", title: "War and Peace" },
     { author: "Fyodor Dostoyevsy", title: "The Idiot" },
@@ -20,7 +25,7 @@
   function getBooksFilter(inputValue: string) {
     const lowerCasedInputValue = inputValue.toLowerCase();
 
-    return function booksFilter(book: any) {
+    return function booksFilter(book: Book) {
       return (
         !inputValue ||
         book.title.toLowerCase().includes(lowerCasedInputValue) ||
