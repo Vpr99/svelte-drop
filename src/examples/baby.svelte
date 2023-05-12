@@ -29,6 +29,7 @@
     };
   }
 
+  // items is a store
   const {
     isOpen,
     triggerButton,
@@ -42,20 +43,12 @@
     getItemProps,
     listItem,
   } = createCombobox({
-    items: $items,
+    items,
     filterFunction(value) {
-      const filteredItems = books.filter(getBooksFilter(value));
-      items.set(filteredItems);
-      return filteredItems;
-
-      // items.set(books.filter(getBooksFilter(value)));
+      items.set(books.filter(getBooksFilter(value)));
     },
     itemToString(item) {
       return item ? item.title : "";
-    },
-    selectItem: (item) => {
-      console.log(item);
-      // setSelectedItem(item),
     },
   });
 </script>
