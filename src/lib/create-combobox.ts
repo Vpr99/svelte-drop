@@ -231,8 +231,6 @@ export function createCombobox<T extends Item>({
     }
 
     function handleKeydown(e: KeyboardEvent) {
-      console.log("EE", e);
-
       if (!$store.isOpen && interactionKeys.has(e.key)) {
         // necessary to prevent the rest of this function from firing
         return;
