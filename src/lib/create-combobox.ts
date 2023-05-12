@@ -1,6 +1,6 @@
 import type { Action } from "svelte/action";
 import { writable, type Readable, derived, readonly } from "svelte/store";
-import { getNextIndex } from "./utils.js";
+import { getNextIndex, interactionKeys, keyboardKeys } from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
   HTMLAttributes,
@@ -231,72 +231,93 @@ export function createCombobox<T extends Item>({
     }
 
     function handleKeydown(e: KeyboardEvent) {
-      if (!$store.isOpen && e.key !== "Escape") {
+      if (!$store.isOpen && interactionKeys.has(e.key)) {
+        // necessary to prevent the rest of this function from firing
+        return;
+      }
+
+      if (!$store.isOpen) {
         open();
       }
 
-      if (e.key === "Escape") {
-        close();
-      }
+      switch (e.key) {
+        case keyboardKeys.Escape: {
+          close();
+          break;
+        }
 
-      if (e.key === "Enter") {
-        setSelectedItem($store.highlightedIndex, e.target as HTMLInputElement);
+        case keyboardKeys.Enter: {
+          setSelectedItem(
+            $store.highlightedIndex,
+            e.target as HTMLInputElement
+          );
+          close();
+          break;
+        }
+        case keyboardKeys.Home: {
+          highlightedIndex.set(0);
+          scrollToItem(0);
+          break;
+        }
+        case keyboardKeys.End: {
+          const nextIndex = items.length - 1;
+          highlightedIndex.set(nextIndex);
+          scrollToItem(nextIndex);
+          break;
+        }
+        case keyboardKeys.PageUp: {
+          highlightedIndex.update((index) => {
+            const nextIndex = getNextIndex({
+              currentIndex: index,
+              itemCount: items.length,
+              moveAmount: -10,
+            });
+            scrollToItem(nextIndex);
+            return nextIndex;
+          });
+          break;
+        }
+        case keyboardKeys.PageDown: {
+          highlightedIndex.update((index) => {
+            const nextIndex = getNextIndex({
+              currentIndex: index,
+              itemCount: items.length,
+              moveAmount: 10,
+            });
+            scrollToItem(nextIndex);
+            return nextIndex;
+          });
+          break;
+        }
+        case keyboardKeys.ArrowDown: {
+          highlightedIndex.update((index) => {
+            const nextIndex = getNextIndex({
+              currentIndex: index,
+              itemCount: items.length,
+              moveAmount: 1,
+            });
+            scrollToItem(nextIndex);
+            return nextIndex;
+          });
+          break;
+        }
+        case keyboardKeys.ArrowUp: {
+          if (e.altKey) {
+            close();
+            return;
+          }
 
-        close();
-      }
-
-      if (e.key === "Home") {
-        highlightedIndex.set(0);
-        scrollToItem(0);
-      }
-      if (e.key === "End") {
-        const nextIndex = items.length - 1;
-        highlightedIndex.set(nextIndex);
-        scrollToItem(nextIndex);
-      }
-      if (e.key === "PageUp") {
-        highlightedIndex.update((index) => {
-          const nextIndex = getNextIndex({
-            currentIndex: index,
-            itemCount: items.length,
-            moveAmount: -10,
+          highlightedIndex.update((index) => {
+            const nextIndex = getNextIndex({
+              currentIndex: index,
+              itemCount: items.length,
+              moveAmount: -1,
+            });
+            scrollToItem(nextIndex);
+            return nextIndex;
           });
-          scrollToItem(nextIndex);
-          return nextIndex;
-        });
-      }
-      if (e.key === "PageDown") {
-        highlightedIndex.update((index) => {
-          const nextIndex = getNextIndex({
-            currentIndex: index,
-            itemCount: items.length,
-            moveAmount: 10,
-          });
-          scrollToItem(nextIndex);
-          return nextIndex;
-        });
-      }
-      if (e.key === "ArrowDown") {
-        highlightedIndex.update((index) => {
-          const nextIndex = getNextIndex({
-            currentIndex: index,
-            itemCount: items.length,
-            moveAmount: 1,
-          });
-          scrollToItem(nextIndex);
-          return nextIndex;
-        });
-      }
-      if (e.key === "ArrowUp") {
-        highlightedIndex.update((index) => {
-          const nextIndex = getNextIndex({
-            currentIndex: index,
-            itemCount: items.length,
-            moveAmount: -1,
-          });
-          scrollToItem(nextIndex);
-          return nextIndex;
-        });
+          break;
+        }
       }
     }
 
@@ -309,7 +330,6 @@ export function createCombobox<T extends Item>({
     const controller = new AbortController();
     node.addEventListener("blur", close, { signal: controller.signal });
     node.addEventListener("focus", open, { signal: controller.signal });
-    node.addEventListener("click", open, { signal: controller.signal });
     node.addEventListener("keydown", handleKeydown, {
       signal: controller.signal,
     });
