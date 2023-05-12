@@ -44,7 +44,9 @@
   } = createCombobox({
     items: $items,
     filterFunction(value) {
-      items.set(books.filter(getBooksFilter(value)));
+      const filteredItems = books.filter(getBooksFilter(value));
+      items.set(filteredItems);
+      return filteredItems;
     },
     itemToString(item) {
       return item ? item.title : "";

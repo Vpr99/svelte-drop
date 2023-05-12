@@ -16,7 +16,7 @@ interface ComboboxProps<T extends Item> {
   /** @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block */
   scrollAlignment?: "nearest" | "center";
   itemToString: (item: T) => string;
-  filterFunction: (value: string) => void;
+  filterFunction: (value: string) => T[];
   selectItem: (item: T) => void;
 }
 
@@ -62,6 +62,7 @@ export function createCombobox<T extends Item>({
   const selectedItem = writable<T>(undefined);
   const highlightedIndex = writable(-1);
   let trapFocus = false;
+  const items$ = writable<T[]>(items);
 
   // @TODO change name?
   const triggerButtonAttributes = derived(isOpen, (isOpen) => ({
@@ -85,13 +86,15 @@ export function createCombobox<T extends Item>({
   let $store: {
     isOpen: boolean;
     highlightedIndex: number;
+    items: T[];
   };
 
   const state = derived(
-    [isOpen, highlightedIndex],
-    ([isOpen, highlightedIndex]) => ({
+    [isOpen, highlightedIndex, items$],
+    ([isOpen, highlightedIndex, items]) => ({
       isOpen,
       highlightedIndex,
+      items,
     })
   );
 
@@ -150,11 +153,11 @@ export function createCombobox<T extends Item>({
   }
 
   function setSelectedItem(index: number, input: HTMLInputElement | null) {
-    const string = itemToString(items[index]);
-    selectedItem.set(items[index]);
+    const string = itemToString($store.items[index]);
+    selectedItem.set($store.items[index]);
 
-    selectItem(items[index]);
-    filterFunction(string);
+    selectItem($store.items[index]);
+    items$.set(filterFunction(string));
 
     if (input) {
       input.value = string;
@@ -250,7 +253,7 @@ export function createCombobox<T extends Item>({
         scrollToItem(0);
       }
       if (e.key === "End") {
-        const nextIndex = items.length - 1;
+        const nextIndex = $store.items.length - 1;
         highlightedIndex.set(nextIndex);
         scrollToItem(nextIndex);
       }
@@ -258,7 +261,7 @@ export function createCombobox<T extends Item>({
         highlightedIndex.update((index) => {
           const nextIndex = getNextIndex({
             currentIndex: index,
-            itemCount: items.length,
+            itemCount: $store.items.length,
             moveAmount: -10,
           });
           scrollToItem(nextIndex);
@@ -269,7 +272,7 @@ export function createCombobox<T extends Item>({
         highlightedIndex.update((index) => {
           const nextIndex = getNextIndex({
             currentIndex: index,
-            itemCount: items.length,
+            itemCount: $store.items.length,
             moveAmount: 10,
           });
           scrollToItem(nextIndex);
@@ -280,7 +283,7 @@ export function createCombobox<T extends Item>({
         highlightedIndex.update((index) => {
           const nextIndex = getNextIndex({
             currentIndex: index,
-            itemCount: items.length,
+            itemCount: $store.items.length,
             moveAmount: 1,
           });
           scrollToItem(nextIndex);
@@ -291,7 +294,7 @@ export function createCombobox<T extends Item>({
         highlightedIndex.update((index) => {
           const nextIndex = getNextIndex({
             currentIndex: index,
-            itemCount: items.length,
+            itemCount: $store.items.length,
             moveAmount: -1,
           });
           scrollToItem(nextIndex);
@@ -303,7 +306,7 @@ export function createCombobox<T extends Item>({
     // @TODO: throttle this value
     function handleInput(e: Event) {
       const value = (e.target as HTMLInputElement).value;
-      filterFunction(value);
+      items$.set(filterFunction(value));
     }
 
     const controller = new AbortController();
