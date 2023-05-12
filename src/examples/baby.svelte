@@ -42,16 +42,12 @@
     getItemProps,
     listItem,
   } = createCombobox({
-    items: $items,
+    items,
     filterFunction(value) {
       items.set(books.filter(getBooksFilter(value)));
     },
     itemToString(item) {
       return item ? item.title : "";
-    },
-    selectItem: (item) => {
-      console.log(item);
-      // setSelectedItem(item),
     },
   });
 </script>
