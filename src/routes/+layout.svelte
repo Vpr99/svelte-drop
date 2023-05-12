@@ -1,11 +1,10 @@
-<script>
+<script lang="ts">
+  import type { NavbarConfig } from "@svelteness/kit-docs";
   import "@svelteness/kit-docs/client/polyfills/index.js";
   import "@svelteness/kit-docs/client/styles/normalize.css";
   import "@svelteness/kit-docs/client/styles/theme.css";
   import "@svelteness/kit-docs/client/styles/vars.css";
-
   import { page } from "$app/stores";
-
   import {
     Button,
     KitDocs,
@@ -17,8 +16,7 @@
 
   $: ({ meta, sidebar } = data);
 
-  /** @type {import('@svelteness/kit-docs').NavbarConfig} */
-  const navbar = {
+  const navbar: NavbarConfig = {
     links: [{ title: "Documentation", slug: "/docs", match: /\/docs/ }],
   };
 
