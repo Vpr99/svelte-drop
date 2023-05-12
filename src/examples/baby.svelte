@@ -29,7 +29,6 @@
     };
   }
 
-  // items is a store
   const {
     isOpen,
     triggerButton,
