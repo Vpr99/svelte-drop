@@ -1,12 +1,10 @@
 <script>
   import "@svelteness/kit-docs/client/polyfills/index.js";
   import "@svelteness/kit-docs/client/styles/normalize.css";
-  import "@svelteness/kit-docs/client/styles/fonts.css";
   import "@svelteness/kit-docs/client/styles/theme.css";
   import "@svelteness/kit-docs/client/styles/vars.css";
 
   import { page } from "$app/stores";
-  import SvelteLogo from "$img/svelte-horizontal.svg?raw";
 
   import {
     Button,
@@ -45,9 +43,7 @@
 <KitDocs {meta}>
   <KitDocsLayout {navbar} {sidebar}>
     <div class="logo" slot="navbar-left">
-      <Button href="/">
-        {@html SvelteLogo}
-      </Button>
+      <Button href="/">Svelte ⬇️</Button>
     </div>
 
     <slot />
