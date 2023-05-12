@@ -1,28 +1,32 @@
 <script>
-  import '@svelteness/kit-docs/client/polyfills/index.js';
-  import '@svelteness/kit-docs/client/styles/normalize.css';
-  import '@svelteness/kit-docs/client/styles/fonts.css';
-  import '@svelteness/kit-docs/client/styles/theme.css';
-  import '@svelteness/kit-docs/client/styles/vars.css';
+  import "@svelteness/kit-docs/client/polyfills/index.js";
+  import "@svelteness/kit-docs/client/styles/normalize.css";
+  import "@svelteness/kit-docs/client/styles/fonts.css";
+  import "@svelteness/kit-docs/client/styles/theme.css";
+  import "@svelteness/kit-docs/client/styles/vars.css";
 
-  import { page } from '$app/stores';
-  import SvelteLogo from '$img/svelte-horizontal.svg?raw';
+  import { page } from "$app/stores";
+  import SvelteLogo from "$img/svelte-horizontal.svg?raw";
 
-  import { Button, KitDocs, KitDocsLayout, createSidebarContext } from '@svelteness/kit-docs';
+  import {
+    Button,
+    KitDocs,
+    KitDocsLayout,
+    createSidebarContext,
+  } from "@svelteness/kit-docs";
 
-  /** @type {import('./$types').LayoutData} */
   export let data;
 
   $: ({ meta, sidebar } = data);
 
   /** @type {import('@svelteness/kit-docs').NavbarConfig} */
   const navbar = {
-    links: [{ title: 'Documentation', slug: '/docs', match: /\/docs/ }],
+    links: [{ title: "Documentation", slug: "/docs", match: /\/docs/ }],
   };
 
   const { activeCategory } = createSidebarContext(sidebar);
 
-  $: category = $activeCategory ? `${$activeCategory}: ` : '';
+  $: category = $activeCategory ? `${$activeCategory}: ` : "";
   $: title = meta ? `${category}${meta.title} | KitDocs` : null;
   $: description = meta?.description;
 </script>
