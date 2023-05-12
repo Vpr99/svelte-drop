@@ -240,62 +240,73 @@ export function createCombobox<T extends Item>({
         open();
       }
 
-      if (e.key === keyboardKeys.Escape) {
-        close();
-      }
-
-      if (e.key === keyboardKeys.Enter) {
-        setSelectedItem($store.highlightedIndex, e.target as HTMLInputElement);
-
-        close();
-      }
-
-      if (e.key === keyboardKeys.Home) {
-        highlightedIndex.set(0);
-        scrollToItem(0);
-      }
-      if (e.key === keyboardKeys.End) {
-        const nextIndex = items.length - 1;
-        highlightedIndex.set(nextIndex);
-        scrollToItem(nextIndex);
-      }
-      if (e.key === keyboardKeys.PageUp) {
-        highlightedIndex.update((index) => {
-          const nextIndex = getNextIndex({
-            currentIndex: index,
-            itemCount: items.length,
-            moveAmount: -10,
-          });
-          scrollToItem(nextIndex);
-          return nextIndex;
-        });
-      }
-      if (e.key === keyboardKeys.PageDown) {
-        highlightedIndex.update((index) => {
-          const nextIndex = getNextIndex({
-            currentIndex: index,
-            itemCount: items.length,
-            moveAmount: 10,
-          });
-          scrollToItem(nextIndex);
-          return nextIndex;
-        });
-      }
-      if (e.key === keyboardKeys.ArrowDown) {
-        highlightedIndex.update((index) => {
-          const nextIndex = getNextIndex({
-            currentIndex: index,
-            itemCount: items.length,
-            moveAmount: 1,
-          });
-          scrollToItem(nextIndex);
-          return nextIndex;
-        });
-      }
-      if (e.key === keyboardKeys.ArrowUp) {
-        if (e.altKey) {
+      switch (e.key) {
+        case keyboardKeys.Escape: {
           close();
-        } else {
+          break;
+        }
+
+        case keyboardKeys.Enter: {
+          setSelectedItem(
+            $store.highlightedIndex,
+            e.target as HTMLInputElement
+          );
+          close();
+          break;
+        }
+        case keyboardKeys.Home: {
+          highlightedIndex.set(0);
+          scrollToItem(0);
+          break;
+        }
+        case keyboardKeys.End: {
+          const nextIndex = items.length - 1;
+          highlightedIndex.set(nextIndex);
+          scrollToItem(nextIndex);
+          break;
+        }
+        case keyboardKeys.PageUp: {
+          highlightedIndex.update((index) => {
+            const nextIndex = getNextIndex({
+              currentIndex: index,
+              itemCount: items.length,
+              moveAmount: -10,
+            });
+            scrollToItem(nextIndex);
+            return nextIndex;
+          });
+          break;
+        }
+        case keyboardKeys.PageDown: {
+          highlightedIndex.update((index) => {
+            const nextIndex = getNextIndex({
+              currentIndex: index,
+              itemCount: items.length,
+              moveAmount: 10,
+            });
+            scrollToItem(nextIndex);
+            return nextIndex;
+          });
+          break;
+        }
+        case keyboardKeys.ArrowDown: {
+          highlightedIndex.update((index) => {
+            const nextIndex = getNextIndex({
+              currentIndex: index,
+              itemCount: items.length,
+              moveAmount: 1,
+            });
+            scrollToItem(nextIndex);
+            return nextIndex;
+          });
+          break;
+        }
+        case keyboardKeys.ArrowUp: {
+          if (e.altKey) {
+            close();
+            return;
+          }
+
           highlightedIndex.update((index) => {
             const nextIndex = getNextIndex({
               currentIndex: index,
@@ -305,6 +316,7 @@ export function createCombobox<T extends Item>({
             scrollToItem(nextIndex);
             return nextIndex;
           });
+          break;
         }
       }
     }
