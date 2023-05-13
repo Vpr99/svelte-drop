@@ -38,20 +38,6 @@ interface Combobox<T> {
   getItemProps: (index: number) => HTMLLiAttributes;
 }
 
-/**
- * minimumest viable combobox
- * [X] it has a trigger and a list
- * [X] when you click the trigger, it opens the list
- * [X] when you click elsewhere, it closes the list
- * [X] clicking the button should focus the input (ish)
- * [X] up/down should be bound
- * [X] Label + other accessibility stuff
- * [X] Keyboard navigation for pgup/pgdown/home/end
- * [X] scroll options
- * [ ] Disabled list items (skip highlighting, etc.)
- * [ ] Item selection
- * [ ] `esc` keybind to (1) close the menu and (2) then clear the input.
- */
 export function createCombobox<T>({
   items,
   scrollAlignment = "nearest",
@@ -163,12 +149,10 @@ export function createCombobox<T>({
       const { index } = node.dataset;
       if (index) {
         const parsedIndex = parseInt(index, 10);
-
         setSelectedItem(
           parsedIndex,
           document.getElementById(`${id}-input`) as HTMLInputElement
         );
-
         document.getElementById(`${id}-input`)?.focus();
         close();
       }
@@ -186,19 +170,15 @@ export function createCombobox<T>({
     node.addEventListener("mouseenter", highlightItem, {
       signal: controller.signal,
     });
-
     node.addEventListener("mousedown", onMouseDown, {
       signal: controller.signal,
     });
-
     document.addEventListener("mouseup", onMouseUp, {
       signal: controller.signal,
     });
-
     node.addEventListener("click", onClick, {
       signal: controller.signal,
     });
-
     return {
       destroy: () => {
         controller.abort();
@@ -209,30 +189,31 @@ export function createCombobox<T>({
   const filterInput: Action<HTMLInputElement, void> = (node) => {
     function scrollToItem(index: number) {
       const el = document.getElementById(`${id}-descendent-${index}`);
-
       if (el) {
-        el.scrollIntoView({
-          block: scrollAlignment,
-        });
+        el.scrollIntoView({ block: scrollAlignment });
       }
     }
 
     function handleKeydown(e: KeyboardEvent) {
-      if (!$store.isOpen && interactionKeys.has(e.key)) {
-        // necessary to prevent the rest of this function from firing
-        return;
-      }
-
+      /**
+       * There are a couple cases to handle if the menu is closed:
+       */
       if (!$store.isOpen) {
+        if (interactionKeys.has(e.key)) {
+          return;
+        }
+        if (e.key === keyboardKeys.Escape) {
+          document.getElementById(`${id}-input`)?.blur();
+          // @TODO clear the input value.
+          return;
+        }
         open();
       }
-
       switch (e.key) {
         case keyboardKeys.Escape: {
           close();
           break;
         }
-
         case keyboardKeys.Enter: {
           setSelectedItem(
             $store.highlightedIndex,
@@ -293,7 +274,6 @@ export function createCombobox<T>({
             close();
             return;
           }
-
           highlightedIndex.update((index) => {
             const nextIndex = getNextIndex({
               currentIndex: index,

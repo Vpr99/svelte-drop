@@ -73,7 +73,6 @@ export const keyboardKeys = {
 };
 
 export const interactionKeys = new Set([
-  keyboardKeys.Escape,
   keyboardKeys.ArrowLeft,
   keyboardKeys.ArrowRight,
   keyboardKeys.Shift,
