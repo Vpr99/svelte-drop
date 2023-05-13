@@ -95,3 +95,34 @@ export const interactionKeys = new Set([
   keyboardKeys.F11,
   keyboardKeys.F12,
 ]);
+
+type EventsFor<T> = T extends Window
+  ? WindowEventMap
+  : T extends Document
+  ? DocumentEventMap
+  : T extends HTMLElement
+  ? HTMLElementEventMap
+  : GlobalEventHandlersEventMap;
+
+export function addEventListener<
+  T extends EventTarget,
+  K extends keyof EventsFor<T> & string
+>(
+  target: T,
+  eventName: K,
+  eventListener: (event: EventsFor<T>[K]) => void,
+  opts?: AddEventListenerOptions
+) {
+  // @ts-expect-error the various EventMap ty
+  const listener: EventListener = eventListener;
+  target.addEventListener(eventName, listener, opts);
+  return function () {
+    target.removeEventListener(eventName, listener, opts);
+  };
+}
+
+export function groupListeners(...callbacks: (() => void)[]): () => void {
+  return function () {
+    callbacks.forEach((callback) => callback());
+  };
+}

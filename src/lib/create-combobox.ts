@@ -6,7 +6,13 @@ import {
   derived,
   readonly,
 } from "svelte/store";
-import { getNextIndex, interactionKeys, keyboardKeys } from "./utils.js";
+import {
+  getNextIndex,
+  interactionKeys,
+  keyboardKeys,
+  addEventListener,
+  groupListeners,
+} from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
   HTMLAttributes,
@@ -166,22 +172,16 @@ export function createCombobox<T>({
       trapFocus = false;
     }
 
-    const controller = new AbortController();
-    node.addEventListener("mouseenter", highlightItem, {
-      signal: controller.signal,
-    });
-    node.addEventListener("mousedown", onMouseDown, {
-      signal: controller.signal,
-    });
-    document.addEventListener("mouseup", onMouseUp, {
-      signal: controller.signal,
-    });
-    node.addEventListener("click", onClick, {
-      signal: controller.signal,
-    });
+    const cleanup = groupListeners(
+      addEventListener(node, "mouseenter", highlightItem),
+      addEventListener(node, "mousedown", onMouseDown),
+      addEventListener(document, "mouseup", onMouseUp),
+      addEventListener(node, "click", onClick)
+    );
+
     return {
       destroy: () => {
-        controller.abort();
+        cleanup();
       },
     };
   };
@@ -294,19 +294,16 @@ export function createCombobox<T>({
       filterFunction(value);
     }
 
-    const controller = new AbortController();
-    node.addEventListener("blur", close, { signal: controller.signal });
-    node.addEventListener("focus", open, { signal: controller.signal });
-    node.addEventListener("keydown", handleKeydown, {
-      signal: controller.signal,
-    });
-    node.addEventListener("input", handleInput, {
-      signal: controller.signal,
-    });
+    const cleanup = groupListeners(
+      addEventListener(node, "blur", close),
+      addEventListener(node, "focus", open),
+      addEventListener(node, "keydown", handleKeydown),
+      addEventListener(node, "input", handleInput)
+    );
 
     return {
       destroy: () => {
-        controller.abort();
+        cleanup();
       },
     };
   };
