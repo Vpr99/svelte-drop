@@ -75,11 +75,7 @@ export function createCombobox<T>({
 
   const state = derived(
     [isOpen, highlightedIndex, items],
-    ([isOpen, highlightedIndex, items]) => ({
-      isOpen,
-      highlightedIndex,
-      items,
-    })
+    ([isOpen, highlightedIndex, items]) => ({ isOpen, highlightedIndex, items })
   );
 
   // @TODO: unsure if we need to unsubscribe from this value when the component using `createCombobox` is unmounted
@@ -203,8 +199,8 @@ export function createCombobox<T>({
           return;
         }
         if (e.key === keyboardKeys.Escape) {
-          document.getElementById(`${id}-input`)?.blur();
-          // @TODO clear the input value.
+          node.blur();
+          node.value = "";
           return;
         }
         open();
