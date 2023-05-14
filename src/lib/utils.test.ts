@@ -1,5 +1,5 @@
 import * as utils from "./utils.js";
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi } from "vitest";
 
 describe("getNextIndex", () => {
   test.each([
@@ -24,4 +24,35 @@ describe("getNextIndex", () => {
       );
     }
   );
+});
+
+describe("groupListeners", () => {
+  test("grouping listeners and calling callbacks", () => {
+    const functionMock = vi.fn();
+    const callbackMock = vi.fn();
+    /**
+     * `functionMock` should be called immediately whereas `callbackMock`
+     * should be called when the group cleanup function is invoked.
+     */
+    function testFunction() {
+      functionMock();
+      return () => {
+        callbackMock();
+      };
+    }
+
+    // Create a listener group.
+    const cleanup = utils.groupListeners(
+      testFunction(),
+      testFunction(),
+      testFunction()
+    );
+    // Assert that `functionMock` was called 3x and `callbackMock` was not.
+    expect(functionMock).toBeCalledTimes(3);
+    expect(callbackMock).not.toBeCalled();
+    // Invoke the cleanup function, which should fire the callbacks.
+    cleanup();
+    // Assert that `callbackMock` was called 3x.
+    expect(callbackMock).toBeCalledTimes(3);
+  });
 });

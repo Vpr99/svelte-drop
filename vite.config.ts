@@ -7,7 +7,12 @@ export default defineConfig({
   plugins: [
     // @ts-expect-error type mismatch with unplugin-icons' vite export.
     icons({ compiler: "svelte" }),
-    kitDocs(),
+    /**
+     * There's something weird in the kitDocs plugin that causes vitest
+     * to run in an infinite loop. Disable it when running tests.
+     * @see https://vitest.dev/guide/#configuring-vitest
+     */
+    !process.env.VITEST && kitDocs(),
     sveltekit(),
   ],
   test: {
