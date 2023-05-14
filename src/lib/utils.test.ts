@@ -26,6 +26,25 @@ describe("getNextIndex", () => {
   );
 });
 
+describe("addEventListener", () => {
+  test("adding and removing a listener", () => {
+    // Spy on the globals for adding and removing event listeners.
+    const addListenerSpy = vi.spyOn(window, "addEventListener");
+    const removeListenerSpy = vi.spyOn(window, "removeEventListener");
+    // Create a mock event handler function.
+    const handlerMock = vi.fn();
+    // Bind the event listener.
+    const cleanup = utils.addEventListener(window, "click", handlerMock);
+    // Assert that the event listener was added and not removed.
+    expect(addListenerSpy).toBeCalledWith("click", handlerMock, undefined);
+    expect(removeListenerSpy).not.toBeCalled();
+    // Call the cleanup function to remove the listener.
+    cleanup();
+    // Assert that the event listener was removed.
+    expect(removeListenerSpy).toBeCalledWith("click", handlerMock, undefined);
+  });
+});
+
 describe("groupListeners", () => {
   test("grouping listeners and calling callbacks", () => {
     const functionMock = vi.fn();
