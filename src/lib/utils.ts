@@ -81,7 +81,6 @@ export const interactionKeys = new Set([
   keyboardKeys.Alt,
   keyboardKeys.Meta,
   keyboardKeys.Enter,
-  keyboardKeys.Backspace,
   keyboardKeys.F1,
   keyboardKeys.F2,
   keyboardKeys.F3,
@@ -113,7 +112,7 @@ export function addEventListener<
   eventListener: (event: EventsFor<T>[K]) => void,
   opts?: AddEventListenerOptions
 ) {
-  // @ts-expect-error the various EventMap ty
+  // @ts-expect-error the various EventMap types aren't narrowed correctly.
   const listener: EventListener = eventListener;
   target.addEventListener(eventName, listener, opts);
   return function () {

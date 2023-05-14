@@ -193,18 +193,26 @@ export function createCombobox<T>({
     function handleKeydown(e: KeyboardEvent) {
       /**
        * There are a couple cases to handle if the menu is closed:
+       * - The user
        */
       if (!$store.isOpen) {
-        if (interactionKeys.has(e.key)) {
-          return;
-        }
+        // The user presses `esc`. The input should be cleared and lose focus.
         if (e.key === keyboardKeys.Escape) {
           node.blur();
           node.value = "";
           return;
         }
+        /**
+         * If the user presses one of the interaction keys, return
+         * early so that the other key events aren't fired.
+         */
+        if (interactionKeys.has(e.key)) {
+          return;
+        }
+        // Otherwise, open the input.
         open();
       }
+      // Handle key events when the menu is open.
       switch (e.key) {
         case keyboardKeys.Escape: {
           close();
