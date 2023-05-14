@@ -6,7 +6,13 @@ import {
   derived,
   readonly,
 } from "svelte/store";
-import { getNextIndex, interactionKeys, keyboardKeys } from "./utils.js";
+import {
+  getNextIndex,
+  interactionKeys,
+  keyboardKeys,
+  addEventListener,
+  groupListeners,
+} from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
   HTMLAttributes,
@@ -38,20 +44,6 @@ interface Combobox<T> {
   getItemProps: (index: number) => HTMLLiAttributes;
 }
 
-/**
- * minimumest viable combobox
- * [X] it has a trigger and a list
- * [X] when you click the trigger, it opens the list
- * [X] when you click elsewhere, it closes the list
- * [X] clicking the button should focus the input (ish)
- * [X] up/down should be bound
- * [X] Label + other accessibility stuff
- * [X] Keyboard navigation for pgup/pgdown/home/end
- * [X] scroll options
- * [ ] Disabled list items (skip highlighting, etc.)
- * [ ] Item selection
- * [ ] `esc` keybind to (1) close the menu and (2) then clear the input.
- */
 export function createCombobox<T>({
   items,
   scrollAlignment = "nearest",
@@ -83,11 +75,7 @@ export function createCombobox<T>({
 
   const state = derived(
     [isOpen, highlightedIndex, items],
-    ([isOpen, highlightedIndex, items]) => ({
-      isOpen,
-      highlightedIndex,
-      items,
-    })
+    ([isOpen, highlightedIndex, items]) => ({ isOpen, highlightedIndex, items })
   );
 
   // @TODO: unsure if we need to unsubscribe from this value when the component using `createCombobox` is unmounted
@@ -163,12 +151,10 @@ export function createCombobox<T>({
       const { index } = node.dataset;
       if (index) {
         const parsedIndex = parseInt(index, 10);
-
         setSelectedItem(
           parsedIndex,
           document.getElementById(`${id}-input`) as HTMLInputElement
         );
-
         document.getElementById(`${id}-input`)?.focus();
         close();
       }
@@ -182,26 +168,16 @@ export function createCombobox<T>({
       trapFocus = false;
     }
 
-    const controller = new AbortController();
-    node.addEventListener("mouseenter", highlightItem, {
-      signal: controller.signal,
-    });
-
-    node.addEventListener("mousedown", onMouseDown, {
-      signal: controller.signal,
-    });
-
-    document.addEventListener("mouseup", onMouseUp, {
-      signal: controller.signal,
-    });
-
-    node.addEventListener("click", onClick, {
-      signal: controller.signal,
-    });
+    const cleanup = groupListeners(
+      addEventListener(node, "mouseenter", highlightItem),
+      addEventListener(node, "mousedown", onMouseDown),
+      addEventListener(document, "mouseup", onMouseUp),
+      addEventListener(node, "click", onClick)
+    );
 
     return {
       destroy: () => {
-        controller.abort();
+        cleanup();
       },
     };
   };
@@ -209,30 +185,39 @@ export function createCombobox<T>({
   const filterInput: Action<HTMLInputElement, void> = (node) => {
     function scrollToItem(index: number) {
       const el = document.getElementById(`${id}-descendent-${index}`);
-
       if (el) {
-        el.scrollIntoView({
-          block: scrollAlignment,
-        });
+        el.scrollIntoView({ block: scrollAlignment });
       }
     }
 
     function handleKeydown(e: KeyboardEvent) {
-      if (!$store.isOpen && interactionKeys.has(e.key)) {
-        // necessary to prevent the rest of this function from firing
-        return;
-      }
-
+      /**
+       * There are a couple cases to handle if the menu is closed:
+       * - The user
+       */
       if (!$store.isOpen) {
+        // The user presses `esc`. The input should be cleared and lose focus.
+        if (e.key === keyboardKeys.Escape) {
+          node.blur();
+          node.value = "";
+          return;
+        }
+        /**
+         * If the user presses one of the interaction keys, return
+         * early so that the other key events aren't fired.
+         */
+        if (interactionKeys.has(e.key)) {
+          return;
+        }
+        // Otherwise, open the input.
         open();
       }
-
+      // Handle key events when the menu is open.
       switch (e.key) {
         case keyboardKeys.Escape: {
           close();
           break;
         }
-
         case keyboardKeys.Enter: {
           setSelectedItem(
             $store.highlightedIndex,
@@ -293,7 +278,6 @@ export function createCombobox<T>({
             close();
             return;
           }
-
           highlightedIndex.update((index) => {
             const nextIndex = getNextIndex({
               currentIndex: index,
@@ -314,19 +298,16 @@ export function createCombobox<T>({
       filterFunction(value);
     }
 
-    const controller = new AbortController();
-    node.addEventListener("blur", close, { signal: controller.signal });
-    node.addEventListener("focus", open, { signal: controller.signal });
-    node.addEventListener("keydown", handleKeydown, {
-      signal: controller.signal,
-    });
-    node.addEventListener("input", handleInput, {
-      signal: controller.signal,
-    });
+    const cleanup = groupListeners(
+      addEventListener(node, "blur", close),
+      addEventListener(node, "focus", open),
+      addEventListener(node, "keydown", handleKeydown),
+      addEventListener(node, "input", handleInput)
+    );
 
     return {
       destroy: () => {
-        controller.abort();
+        cleanup();
       },
     };
   };
