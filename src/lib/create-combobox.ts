@@ -191,7 +191,7 @@ export function createCombobox<T>({
     }
 
     function handleKeydown(e: KeyboardEvent) {
-      // Handle key events when the menu is open.
+      // Handle key events when the menu is closed.
       if (!$store.isOpen) {
         // The user presses `esc`. The input should be cleared and lose focus.
         if (e.key === keyboardKeys.Escape) {
