@@ -2,6 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base", ":rebaseStalePrs"],
   "labels": ["dependencies"],
+  "assignees": ["Vpr99"],
+  "reviewers": ["Vpr99"],
   "schedule": [
     "after 10pm every weekday",
     "before 5am every weekday",
