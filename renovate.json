@@ -10,9 +10,10 @@
   "prConcurrentLimit": 5,
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "matchUpdateTypes": ["digest", "minor", "patch", "pin"],
       "automerge": true,
       "automergeType": "branch"
     }
-  ]
+  ],
+  "platformAutomerge": true
 }
