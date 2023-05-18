@@ -63,7 +63,7 @@
     "typescript": "5.0.4",
     "unplugin-icons": "0.16.1",
     "vite": "4.3.7",
-    "vitest": "0.31.0"
+    "vitest": "0.31.1"
   },
   "types": "./dist/index.d.ts",
   "type": "module",
