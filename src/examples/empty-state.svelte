@@ -12,7 +12,7 @@
     title: string;
   }
 
-  const books: Book[] = [
+  let books: Book[] = [
     { id: 1, author: "Harper Lee", title: "To Kill a Mockingbird" },
     { id: 2, author: "Lev Tolstoy", title: "War and Peace" },
     { id: 3, author: "Fyodor Dostoyevsy", title: "The Idiot" },
@@ -25,6 +25,7 @@
     { id: 10, author: "Fyodor Dostoevsky", title: "Crime and Punishment" },
   ];
 
+  // set the store initially
   const items = writable(books);
 
   function getBooksFilter(inputValue: string) {
@@ -53,6 +54,7 @@
   } = createCombobox({
     items,
     filterFunction(value) {
+      // the store is a super mutable snapshot of books
       items.set(books.filter(getBooksFilter(value)));
     },
     itemToString(item) {
@@ -63,14 +65,18 @@
   });
 
   function addItem() {
-    // how do we grab the input value
-    items.set([{ id: 20, author: "", title: $inputValue }]);
-
-    /* least controlled to most controlled
+    /* 
+      ideas: (least controlled to most controlled)
       - passing back the current input value
       - passing back an onclick event with the value
     */
+
+    // in order to prevent items being removed, they have to be added to the full source full of truth first
+    books = books.concat([{ id: 20, author: "Unknown", title: $inputValue }]);
+    items.set(books.filter(getBooksFilter($inputValue)));
   }
+
+  // $: console.log($items);
 </script>
 
 <div>
@@ -97,9 +103,11 @@
   >
     {#if $isOpen}
       {#if $items.length === 0}
-        <li use:listItem on:click={addItem} class="item" {...getItemProps(0)}>
-          couldn't find: {$inputValue}<br />
-          add it to the list
+        <li use:listItem class="item" {...getItemProps(0)}>
+          <button on:click={addItem}>
+            couldn't find: {$inputValue}<br />
+            add it to the list
+          </button>
         </li>
       {/if}
 
