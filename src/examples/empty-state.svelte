@@ -1,24 +1,28 @@
-<!-- Playground example during dev -->
+<!-- 
+  no items
+  adding a new item
+ -->
 <script lang="ts">
   import { writable } from "svelte/store";
   import { createCombobox } from "$lib/index.js";
 
   interface Book {
+    id: number;
     author: string;
     title: string;
   }
 
   const books: Book[] = [
-    { author: "Harper Lee", title: "To Kill a Mockingbird" },
-    { author: "Lev Tolstoy", title: "War and Peace" },
-    { author: "Fyodor Dostoyevsy", title: "The Idiot" },
-    { author: "Oscar Wilde", title: "A Picture of Dorian Gray" },
-    { author: "George Orwell", title: "1984" },
-    { author: "Jane Austen", title: "Pride and Prejudice" },
-    { author: "Marcus Aurelius", title: "Meditations" },
-    { author: "Fyodor Dostoevsky", title: "The Brothers Karamazov" },
-    { author: "Lev Tolstoy", title: "Anna Karenina" },
-    { author: "Fyodor Dostoevsky", title: "Crime and Punishment" },
+    { id: 1, author: "Harper Lee", title: "To Kill a Mockingbird" },
+    { id: 2, author: "Lev Tolstoy", title: "War and Peace" },
+    { id: 3, author: "Fyodor Dostoyevsy", title: "The Idiot" },
+    { id: 4, author: "Oscar Wilde", title: "A Picture of Dorian Gray" },
+    { id: 5, author: "George Orwell", title: "1984" },
+    { id: 6, author: "Jane Austen", title: "Pride and Prejudice" },
+    { id: 7, author: "Marcus Aurelius", title: "Meditations" },
+    { id: 8, author: "Fyodor Dostoevsky", title: "The Brothers Karamazov" },
+    { id: 9, author: "Lev Tolstoy", title: "Anna Karenina" },
+    { id: 10, author: "Fyodor Dostoevsky", title: "Crime and Punishment" },
   ];
 
   const items = writable(books);
@@ -37,6 +41,7 @@
 
   const {
     isOpen,
+    inputValue,
     filterInput,
     labelAttributes,
     listAttributes,
@@ -53,7 +58,19 @@
     itemToString(item) {
       return item ? item.title : "";
     },
+
+    // something here
   });
+
+  function addItem() {
+    // how do we grab the input value
+    items.set([{ id: 20, author: "", title: $inputValue }]);
+
+    /* least controlled to most controlled
+      - passing back the current input value
+      - passing back an onclick event with the value
+    */
+  }
 </script>
 
 <div>
@@ -79,7 +96,14 @@
     {...listAttributes}
   >
     {#if $isOpen}
-      {#each $items as item, index (index)}
+      {#if $items.length === 0}
+        <li use:listItem on:click={addItem} class="item" {...getItemProps(0)}>
+          couldn't find: {$inputValue}<br />
+          add it to the list
+        </li>
+      {/if}
+
+      {#each $items as item, index (item.id)}
         <li
           use:listItem
           class="item"

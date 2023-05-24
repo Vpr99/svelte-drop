@@ -42,6 +42,7 @@ interface Combobox<T> {
   highlightedIndex: Readable<number>;
   selectedItem: Readable<T>;
   getItemProps: (index: number) => HTMLLiAttributes;
+  inputValue: Readable<string>;
 }
 
 export function createCombobox<T>({
@@ -56,6 +57,7 @@ export function createCombobox<T>({
   const selectedItem = writable<T>(undefined);
   const highlightedIndex = writable(-1);
   let trapFocus = false;
+  const inputValue = writable("");
 
   const labelAttributes = {
     id: `${id}-label`,
@@ -297,6 +299,7 @@ export function createCombobox<T>({
     // @TODO: throttle this value
     function handleInput(e: Event) {
       const value = (e.target as HTMLInputElement).value;
+      inputValue.set(value);
       filterFunction(value);
     }
 
@@ -315,12 +318,13 @@ export function createCombobox<T>({
   };
 
   return {
-    filterInput,
-    filterInputAttributes,
-    getItemProps,
+    inputValue: readonly(inputValue),
     selectedItem: readonly(selectedItem),
     highlightedIndex: readonly(highlightedIndex),
     isOpen: readonly(isOpen),
+    filterInput,
+    filterInputAttributes,
+    getItemProps,
     labelAttributes,
     listAttributes,
     listItem,
