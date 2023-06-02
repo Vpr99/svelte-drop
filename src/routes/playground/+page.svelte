@@ -1,11 +1,9 @@
 <script lang="ts">
   import EmptyState from "../../examples/empty-state.svelte";
-  import AsyncDataFetching from "../../examples/async-data-fetching.svelte";
 </script>
 
 <div>
   <EmptyState />
-  <AsyncDataFetching />
 </div>
 
 <style>

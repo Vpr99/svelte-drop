@@ -56,6 +56,7 @@
     selectedItem,
     getItemProps,
     listItem,
+    list,
   } = createCombobox({
     items,
     filterFunction(value) {
@@ -86,25 +87,32 @@
     </label>
   </div>
   <ul
+    use:list={{
+      items: $items,
+    }}
     style:--status={!($isOpen && $items.length) ? "visible" : "visible"}
     class="list"
     {...listAttributes}
   >
     {#if $isOpen}
-      {#each $items as item, index (item.id)}
-        <li
-          use:listItem
-          class="item"
-          style:--font-weight={$selectedItem === item ? "700" : "400"}
-          style:--background-color={$highlightedIndex === index
-            ? "#eee"
-            : "transparent"}
-          {...getItemProps(index)}
-        >
-          <span>{item.title}</span>
-          <span class="item-author">{item.author}</span>
-        </li>
-      {/each}
+      {#if $items.length !== 0}
+        {#each $items as item, index (item.id)}
+          <li
+            use:listItem
+            class="item"
+            style:--font-weight={$selectedItem === item ? "700" : "400"}
+            style:--background-color={$highlightedIndex === index
+              ? "#eee"
+              : "transparent"}
+            {...getItemProps(index)}
+          >
+            <span>{item.title}</span>
+            <span class="item-author">{item.author}</span>
+          </li>
+        {/each}
+      {:else}
+        <li use:listItem class="item" {...getItemProps(99)}>It me</li>
+      {/if}
     {/if}
   </ul>
 </div>

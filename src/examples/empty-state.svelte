@@ -51,6 +51,7 @@
     selectedItem,
     getItemProps,
     listItem,
+    list,
   } = createCombobox({
     items,
     filterFunction(value) {
@@ -97,6 +98,10 @@
     </label>
   </div>
   <ul
+    use:list={{
+      inputValue: $inputValue,
+      isOpen: $isOpen,
+    }}
     style:--status={!($isOpen && $items.length) ? "visible" : "visible"}
     class="list"
     {...listAttributes}

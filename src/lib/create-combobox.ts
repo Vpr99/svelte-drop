@@ -34,6 +34,8 @@ interface Combobox<T> {
   isOpen: Readable<boolean>;
   filterInput: Action<HTMLInputElement, void>;
   listItem: Action<HTMLLIElement, void>;
+  // @TODO: support OL, DL, div, nav, etc
+  list: Action<HTMLUListElement, { inputValue: string; isOpen: boolean }>;
   filterInputAttributes: Readable<HTMLInputAttributes>;
   labelAttributes: HTMLLabelAttributes;
   listAttributes: HTMLAttributes<
@@ -55,6 +57,7 @@ export function createCombobox<T>({
   const id = nanoid(6);
   const isOpen = writable(false);
   const selectedItem = writable<T>(undefined);
+  const itemCount = writable(0);
   const highlightedIndex = writable(-1);
   let trapFocus = false;
   const inputValue = writable("");
@@ -121,6 +124,7 @@ export function createCombobox<T>({
   function getItemProps(index: number) {
     return {
       id: `${id}-descendent-${index}`,
+      "data-list-item": "data-list-item",
       "data-index": index,
     };
   }
@@ -138,7 +142,30 @@ export function createCombobox<T>({
     }
   }
 
+  const list: Action<
+    HTMLUListElement,
+    {
+      inputValue: string;
+      isOpen: boolean;
+    }
+  > = (node) => {
+    function checkList() {
+      // node is always the same
+      const length = node.querySelectorAll("[data-list-item]").length;
+
+      itemCount.set(length);
+    }
+
+    checkList();
+
+    return {
+      update: () => checkList(),
+      destroy: () => undefined,
+    };
+  };
+
   const listItem: Action<HTMLLIElement, void> = (node) => {
+    // @TODO figure out its own position in the list (node.parentElement.children[]...?)
     function highlightItem() {
       const { index } = node.dataset;
       if (index) {
@@ -327,6 +354,7 @@ export function createCombobox<T>({
     getItemProps,
     labelAttributes,
     listAttributes,
+    list,
     listItem,
   };
 }
