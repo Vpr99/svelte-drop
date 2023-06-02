@@ -171,9 +171,13 @@ export function createCombobox<T>({
       if (index) {
         const parsedIndex = parseInt(index, 10);
         if (parsedIndex !== $store.highlightedIndex) {
-          highlightedIndex.set(parsedIndex);
+          node.setAttribute("data-highlighted", "data-highlighted");
         }
       }
+    }
+
+    function unHighlightItem() {
+      node.removeAttribute("data-highlighted");
     }
 
     function onClick() {
@@ -199,6 +203,7 @@ export function createCombobox<T>({
 
     const cleanup = groupListeners(
       addEventListener(node, "mouseenter", highlightItem),
+      addEventListener(node, "mouseleave", unHighlightItem),
       addEventListener(node, "mousedown", onMouseDown),
       addEventListener(document, "mouseup", onMouseUp),
       addEventListener(node, "click", onClick)

@@ -117,13 +117,13 @@
       {/if}
 
       {#each $items as item, index (item.id)}
+        <!-- style:--background-color={$highlightedIndex === index
+            ? "#eee"
+            : "transparent"} -->
         <li
           use:listItem
           class="item"
           style:--font-weight={$selectedItem === item ? "700" : "400"}
-          style:--background-color={$highlightedIndex === index
-            ? "#eee"
-            : "transparent"}
           {...getItemProps(index)}
         >
           <span>{item.title}</span>
@@ -171,11 +171,15 @@
   }
 
   .item {
-    background-color: var(--background-color, transparent);
+    background-color: transparent;
     display: flex;
     flex-direction: column;
     font-weight: var(--font-weight, 400);
     padding: 0.5rem 0.75rem;
+  }
+
+  .item[data-highlighted] {
+    background-color: #eee;
   }
 
   .item-author {
