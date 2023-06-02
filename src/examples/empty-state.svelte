@@ -74,8 +74,6 @@
     books = books.concat([{ id: 20, author: "Unknown", title: $inputValue }]);
     items.set(books.filter(getBooksFilter($inputValue)));
   }
-
-  // $: console.log($items);
 </script>
 
 <div>

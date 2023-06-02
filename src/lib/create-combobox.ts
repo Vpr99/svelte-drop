@@ -20,6 +20,7 @@ import type {
   HTMLInputAttributes,
   HTMLLabelAttributes,
 } from "svelte/elements";
+import mitt from "mitt";
 
 interface ComboboxProps<T> {
   items: Writable<T[]>;
@@ -45,6 +46,12 @@ interface Combobox<T> {
   inputValue: Readable<string>;
 }
 
+type ListUpdatedEvent = CustomEvent<{ id: string }>;
+
+function dispatchListUpdatedEvent(id: string) {
+  document.dispatchEvent(new CustomEvent("list:update", { detail: { id } }));
+}
+
 export function createCombobox<T>({
   items,
   scrollAlignment = "nearest",
@@ -58,7 +65,7 @@ export function createCombobox<T>({
   const itemCount = writable(0);
   let trapFocus = false;
   const inputValue = writable("");
-  let listUpdated: CustomEvent<{ id: string }>;
+  const emitter = mitt();
 
   const labelAttributes = {
     id: `${id}-label`,
@@ -110,15 +117,16 @@ export function createCombobox<T>({
     if (!trapFocus) {
       isOpen.set(false);
     }
-
-    // document.dispatchEvent(listUpdated);
   }
 
   // Open the menu and focus the input.
   function open() {
     isOpen.set(true);
     document?.getElementById(`${id}-input`)?.focus();
-    document.dispatchEvent(listUpdated);
+
+    setTimeout(() => {
+      emitter.emit("list:updated");
+    }, 100);
   }
 
   function setSelectedItem(index: number, input: HTMLInputElement | null) {
@@ -135,16 +143,9 @@ export function createCombobox<T>({
   }
 
   const list: Action<HTMLUListElement> = (node) => {
-    listUpdated = new CustomEvent("list:update", { detail: { id } });
-
-    function checkList(e: Event) {
-      // due to the possibilty of having multiple comboboxes, we need to ensure the custom event
-      // that was fired matches the id on this instance of the combobox
-      if ((e as CustomEvent<{ id: string }>).detail.id !== id) {
-        return;
-      }
-
+    function setListValues() {
       const listItems = node.querySelectorAll("[data-list-item]");
+
       listItems.forEach((el, i) => {
         setAttribute(el, "data-index", i);
         setAttribute(el, "id", `${id}-descendent-${i}`);
@@ -153,11 +154,13 @@ export function createCombobox<T>({
       itemCount.set(listItems.length);
     }
 
-    document.addEventListener("list:update", checkList);
+    setListValues();
+    emitter.on("list:updated", setListValues);
 
     return {
       destroy: () => {
-        document.removeEventListener("list:update", checkList);
+        // tying this to the list
+        emitter.all.clear();
       },
     };
   };
@@ -170,6 +173,8 @@ export function createCombobox<T>({
         .querySelector(`[data-highlighted]`)
         ?.removeAttribute("data-highlighted");
       const { index } = node.dataset;
+
+      console.log(node);
       if (index) {
         setAttribute(node, "data-highlighted");
       }
@@ -344,7 +349,7 @@ export function createCombobox<T>({
       inputValue.set(value);
       filterFunction(value);
 
-      document.dispatchEvent(listUpdated);
+      emitter.emit("list:updated");
     }
 
     const cleanup = groupListeners(
