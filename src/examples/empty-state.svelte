@@ -47,9 +47,7 @@
     labelAttributes,
     listAttributes,
     filterInputAttributes,
-    highlightedIndex,
     selectedItem,
-    getItemProps,
     listItem,
     list,
   } = createCombobox({
@@ -108,7 +106,7 @@
   >
     {#if $isOpen}
       {#if $items.length === 0}
-        <li use:listItem class="item" {...getItemProps(0)}>
+        <li use:listItem class="item">
           <button on:click={addItem}>
             couldn't find: {$inputValue}<br />
             add it to the list
@@ -116,15 +114,11 @@
         </li>
       {/if}
 
-      {#each $items as item, index (item.id)}
-        <!-- style:--background-color={$highlightedIndex === index
-            ? "#eee"
-            : "transparent"} -->
+      {#each $items as item (item.id)}
         <li
           use:listItem
           class="item"
           style:--font-weight={$selectedItem === item ? "700" : "400"}
-          {...getItemProps(index)}
         >
           <span>{item.title}</span>
           <span class="item-author">{item.author}</span>

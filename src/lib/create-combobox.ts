@@ -18,7 +18,6 @@ import type {
   HTMLAttributes,
   HTMLInputAttributes,
   HTMLLabelAttributes,
-  HTMLLiAttributes,
 } from "svelte/elements";
 
 interface ComboboxProps<T> {
@@ -41,9 +40,7 @@ interface Combobox<T> {
   listAttributes: HTMLAttributes<
     HTMLUListElement | HTMLOListElement | HTMLDListElement
   >;
-  highlightedIndex: Readable<number>;
   selectedItem: Readable<T>;
-  getItemProps: (index: number) => HTMLLiAttributes;
   inputValue: Readable<string>;
 }
 
@@ -58,7 +55,6 @@ export function createCombobox<T>({
   const isOpen = writable(false);
   const selectedItem = writable<T>(undefined);
   const itemCount = writable(0);
-  const highlightedIndex = writable(-1);
   let trapFocus = false;
   const inputValue = writable("");
 
@@ -74,13 +70,13 @@ export function createCombobox<T>({
 
   let $store: {
     isOpen: boolean;
-    highlightedIndex: number;
+    itemCount: number;
     items: T[];
   };
 
   const state = derived(
-    [isOpen, highlightedIndex, items],
-    ([isOpen, highlightedIndex, items]) => ({ isOpen, highlightedIndex, items })
+    [isOpen, itemCount, items],
+    ([isOpen, itemCount, items]) => ({ isOpen, itemCount, items })
   );
 
   // @TODO: unsure if we need to unsubscribe from this value when the component using `createCombobox` is unmounted
@@ -90,16 +86,15 @@ export function createCombobox<T>({
 
   // @TODO change name?
   // @TODO add `satisfies` maybe?
+  // @TODO see if we can do without `as const`.
   const filterInputAttributes = derived(
-    [isOpen, highlightedIndex],
-    ([isOpen, highlightedIndex]) =>
+    [isOpen],
+    ([isOpen]) =>
       ({
         "aria-autocomplete": "list",
         "aria-controls": `${id}-menu`,
         "aria-expanded": isOpen,
         "aria-labelledby": `${id}-label`,
-        "aria-activedescendant":
-          highlightedIndex > -1 ? `${id}-descendent-${highlightedIndex}` : "",
         autocomplete: "off",
         id: `${id}-input`,
         role: "combobox",
@@ -119,14 +114,6 @@ export function createCombobox<T>({
   function open() {
     isOpen.set(true);
     document?.getElementById(`${id}-input`)?.focus();
-  }
-
-  function getItemProps(index: number) {
-    return {
-      id: `${id}-descendent-${index}`,
-      "data-list-item": "data-list-item",
-      "data-index": index,
-    };
   }
 
   function setSelectedItem(index: number, input: HTMLInputElement | null) {
@@ -150,10 +137,14 @@ export function createCombobox<T>({
     }
   > = (node) => {
     function checkList() {
-      // node is always the same
-      const length = node.querySelectorAll("[data-list-item]").length;
+      const listItems = node.querySelectorAll("[data-list-item]");
+      // @TODO add abstraction that lets us set empty values and handles coercion.
+      listItems.forEach((el, i) => {
+        el.setAttribute("data-index", String(i));
+        el.setAttribute("id", `${id}-descendent-${i}`);
+      });
 
-      itemCount.set(length);
+      itemCount.set(listItems.length);
     }
 
     checkList();
@@ -165,14 +156,15 @@ export function createCombobox<T>({
   };
 
   const listItem: Action<HTMLLIElement, void> = (node) => {
-    // @TODO figure out its own position in the list (node.parentElement.children[]...?)
+    node.setAttribute("data-list-item", "");
+
     function highlightItem() {
+      document
+        .querySelector(`[data-highlighted]`)
+        ?.removeAttribute("data-highlighted");
       const { index } = node.dataset;
       if (index) {
-        const parsedIndex = parseInt(index, 10);
-        if (parsedIndex !== $store.highlightedIndex) {
-          node.setAttribute("data-highlighted", "data-highlighted");
-        }
+        node.setAttribute("data-highlighted", "");
       }
     }
 
@@ -217,9 +209,25 @@ export function createCombobox<T>({
   };
 
   const filterInput: Action<HTMLInputElement, void> = (node) => {
+    function removeHighlight() {
+      const highlit = document.querySelector(`[data-highlighted]`);
+      if (highlit) {
+        highlit.removeAttribute("data-highlighted");
+        const { index } = highlit.dataset;
+        if (index) {
+          return parseInt(index, 10);
+        }
+      }
+      return -1;
+    }
+
+    // @TODO set activedescendant on the input.
+    // "aria-activedescendant":
+    // highlightedIndex > -1 ? `${id}-descendent-${highlightedIndex}` : "",
     function scrollToItem(index: number) {
-      const el = document.getElementById(`${id}-descendent-${index}`);
+      const el = document.querySelector(`[data-index="${index}"]`);
       if (el) {
+        el.setAttribute("data-highlighted", "");
         el.scrollIntoView({ block: scrollAlignment });
       }
     }
@@ -255,58 +263,53 @@ export function createCombobox<T>({
           break;
         }
         case keyboardKeys.Enter: {
-          setSelectedItem(
-            $store.highlightedIndex,
-            e.target as HTMLInputElement
-          );
+          const highlit = document.querySelector(`[data-highlighted]`);
+          const index = highlit?.dataset.index;
+          setSelectedItem(index, e.target as HTMLInputElement);
           close();
           break;
         }
         case keyboardKeys.Home: {
-          highlightedIndex.set(0);
           scrollToItem(0);
           break;
         }
         case keyboardKeys.End: {
-          const nextIndex = $store.items.length - 1;
-          highlightedIndex.set(nextIndex);
+          const nextIndex = $store.itemCount - 1;
           scrollToItem(nextIndex);
           break;
         }
         case keyboardKeys.PageUp: {
-          highlightedIndex.update((index) => {
-            const nextIndex = getNextIndex({
-              currentIndex: index,
-              itemCount: $store.items.length,
-              moveAmount: -10,
-            });
-            scrollToItem(nextIndex);
-            return nextIndex;
+          const previousHightlightedIndex = removeHighlight();
+          const nextIndex = getNextIndex({
+            currentIndex: previousHightlightedIndex,
+            itemCount: $store.itemCount,
+            moveAmount: -10,
           });
+          scrollToItem(nextIndex);
           break;
         }
         case keyboardKeys.PageDown: {
-          highlightedIndex.update((index) => {
-            const nextIndex = getNextIndex({
-              currentIndex: index,
-              itemCount: $store.items.length,
-              moveAmount: 10,
-            });
-            scrollToItem(nextIndex);
-            return nextIndex;
+          const previousHightlightedIndex = removeHighlight();
+          const nextIndex = getNextIndex({
+            currentIndex: previousHightlightedIndex,
+            itemCount: $store.itemCount,
+            moveAmount: 10,
           });
+          scrollToItem(nextIndex);
           break;
         }
         case keyboardKeys.ArrowDown: {
-          highlightedIndex.update((index) => {
-            const nextIndex = getNextIndex({
-              currentIndex: index,
-              itemCount: $store.items.length,
-              moveAmount: 1,
-            });
-            scrollToItem(nextIndex);
-            return nextIndex;
+          // figure out the currently highlighted item (if any)
+          // we also need to remove that highlight
+          // set the new hightlight based on the index
+
+          const previousHightlightedIndex = removeHighlight();
+          const nextIndex = getNextIndex({
+            currentIndex: previousHightlightedIndex,
+            itemCount: $store.itemCount,
+            moveAmount: 1,
           });
+          scrollToItem(nextIndex);
           break;
         }
         case keyboardKeys.ArrowUp: {
@@ -314,15 +317,13 @@ export function createCombobox<T>({
             close();
             return;
           }
-          highlightedIndex.update((index) => {
-            const nextIndex = getNextIndex({
-              currentIndex: index,
-              itemCount: $store.items.length,
-              moveAmount: -1,
-            });
-            scrollToItem(nextIndex);
-            return nextIndex;
+          const previousHightlightedIndex = removeHighlight();
+          const nextIndex = getNextIndex({
+            currentIndex: previousHightlightedIndex,
+            itemCount: $store.itemCount,
+            moveAmount: -1,
           });
+          scrollToItem(nextIndex);
           break;
         }
       }
@@ -352,11 +353,9 @@ export function createCombobox<T>({
   return {
     inputValue: readonly(inputValue),
     selectedItem: readonly(selectedItem),
-    highlightedIndex: readonly(highlightedIndex),
     isOpen: readonly(isOpen),
     filterInput,
     filterInputAttributes,
-    getItemProps,
     labelAttributes,
     listAttributes,
     list,
