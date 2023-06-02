@@ -1,27 +1,27 @@
-import type { Action } from "svelte/action";
-import {
-  writable,
-  type Readable,
-  type Writable,
-  derived,
-  readonly,
-} from "svelte/store";
-import {
-  getNextIndex,
-  interactionKeys,
-  keyboardKeys,
-  addEventListener,
-  groupListeners,
-  setAttribute,
-} from "./utils.js";
+import { createNanoEvents } from "nanoevents";
 import { nanoid } from "nanoid";
+import { tick } from "svelte";
+import type { Action } from "svelte/action";
 import type {
   HTMLAttributes,
   HTMLInputAttributes,
   HTMLLabelAttributes,
 } from "svelte/elements";
-import { createNanoEvents } from "nanoevents";
-import { tick } from "svelte";
+import {
+  derived,
+  readonly,
+  writable,
+  type Readable,
+  type Writable,
+} from "svelte/store";
+import {
+  addEventListener,
+  getNextIndex,
+  groupListeners,
+  interactionKeys,
+  keyboardKeys,
+  setAttribute,
+} from "./utils.js";
 
 interface ComboboxProps<T> {
   items: Writable<T[]>;
@@ -34,10 +34,10 @@ interface ComboboxProps<T> {
 
 interface Combobox<T> {
   isOpen: Readable<boolean>;
-  filterInput: Action<HTMLInputElement, void>;
-  listItem: Action<HTMLLIElement, void>;
+  filterInput: Action<HTMLInputElement>;
+  listItem: Action<HTMLLIElement>;
   // @TODO: support OL, DL, div, nav, etc
-  list: Action<HTMLUListElement, void>;
+  list: Action<HTMLUListElement>;
   filterInputAttributes: Readable<HTMLInputAttributes>;
   labelAttributes: HTMLLabelAttributes;
   listAttributes: HTMLAttributes<
@@ -145,37 +145,57 @@ export function createCombobox<T>({
     }
   }
 
+  /**
+   * Highlights an item in the list either by mouseover or keyboard navigation.
+   * @param index index of the item to highlight.
+   */
+  function highlightItem(index: number) {
+    const item = document.querySelector(`[data-index="${index}"]`);
+    if (item) {
+      // Mark the item as the active descendant of the input.
+      const input = document.getElementById(`${id}-input`) as HTMLElement;
+      setAttribute(input, "aria-activedescendant", `${id}-descendent-${index}`);
+      // Set the data-highlighted attribute on the item.
+      setAttribute(item, "data-highlighted");
+      // If the item isn't already visible, scroll it into view.
+      item.scrollIntoView({ block: scrollAlignment });
+    }
+  }
+
   const list: Action<HTMLUListElement> = (node) => {
-    function setListValues() {
-      const listItems = node.querySelectorAll("[data-list-item]");
-
-      listItems.forEach((el, i) => {
-        setAttribute(el, "data-index", i);
-        setAttribute(el, "id", `${id}-descendent-${i}`);
+    /**
+     * Iterates over visible items and ensures that `data-index`
+     * and `id` attributes represent their position in the list.
+     */
+    function updateItemIndices() {
+      const items = node.querySelectorAll("[data-list-item]");
+      itemCount.set(items.length);
+      items.forEach((item, i) => {
+        setAttribute(item, "data-index", i);
+        setAttribute(item, "id", `${id}-descendent-${i}`);
       });
-
-      itemCount.set(listItems.length);
     }
 
-    setListValues();
-    const unbind = emitter.on("update", setListValues);
+    /**
+     * Trigger an update when the component mounts and listen for
+     * future "update" events. This happens when the list is filtered
+     * or the items change.
+     */
+    updateItemIndices();
+    const unsubscribe = emitter.on("update", updateItemIndices);
 
     return {
-      destroy: () => unbind(),
+      destroy: () => unsubscribe(),
     };
   };
 
-  const listItem: Action<HTMLLIElement, void> = (node) => {
+  const listItem: Action<HTMLLIElement> = (node) => {
     setAttribute(node, "data-list-item");
 
-    function highlightItem() {
-      document
-        .querySelector(`[data-highlighted]`)
-        ?.removeAttribute("data-highlighted");
+    function onMouseEnter() {
       const { index } = node.dataset;
-
       if (index) {
-        setAttribute(node, "data-highlighted");
+        highlightItem(parseInt(index, 10));
       }
     }
 
@@ -205,7 +225,7 @@ export function createCombobox<T>({
     }
 
     const cleanup = groupListeners(
-      addEventListener(node, "mouseenter", highlightItem),
+      addEventListener(node, "mouseenter", onMouseEnter),
       addEventListener(node, "mouseleave", unHighlightItem),
       addEventListener(node, "mousedown", onMouseDown),
       addEventListener(document, "mouseup", onMouseUp),
@@ -219,14 +239,12 @@ export function createCombobox<T>({
     };
   };
 
-  const filterInput: Action<HTMLInputElement, void> = (node) => {
+  const filterInput: Action<HTMLInputElement> = (node) => {
     function removeHighlight() {
-      const item = document.querySelector(`[data-highlighted]`) as HTMLElement;
-
+      const item = document.querySelector<HTMLElement>(`[data-highlighted]`);
       if (item) {
         item.removeAttribute("data-highlighted");
         const { index } = item.dataset;
-
         if (index) {
           return parseInt(index, 10);
         }
@@ -234,17 +252,9 @@ export function createCombobox<T>({
       return -1;
     }
 
-    // @TODO set activedescendant on the input.
-    // "aria-activedescendant":
-    // highlightedIndex > -1 ? `${id}-descendent-${highlightedIndex}` : "",
-    function scrollToItem(index: number) {
-      const el = document.querySelector(`[data-index="${index}"]`);
-      if (el) {
-        setAttribute(el, "data-highlighted");
-        el.scrollIntoView({ block: scrollAlignment });
-      }
-    }
-
+    /**
+     * Handles all keyboard events when the input is focused.
+     */
     function handleKeydown(e: KeyboardEvent) {
       // Handle key events when the menu is closed.
       if (!store$.isOpen) {
@@ -276,10 +286,10 @@ export function createCombobox<T>({
           break;
         }
         case keyboardKeys.Enter: {
+          // @TODO handle non-selection callbacks.
           const { index } = (
             document.querySelector(`[data-highlighted]`) as HTMLElement
           ).dataset;
-
           if (index) {
             setSelectedItem(parseInt(index, 10), e.target as HTMLInputElement);
           }
@@ -288,46 +298,42 @@ export function createCombobox<T>({
           break;
         }
         case keyboardKeys.Home: {
-          scrollToItem(0);
+          highlightItem(0);
           break;
         }
         case keyboardKeys.End: {
           const nextIndex = store$.itemCount - 1;
-          scrollToItem(nextIndex);
+          highlightItem(nextIndex);
           break;
         }
         case keyboardKeys.PageUp: {
-          const previousHightlightedIndex = removeHighlight();
+          const currentIndex = removeHighlight();
           const nextIndex = getNextIndex({
-            currentIndex: previousHightlightedIndex,
+            currentIndex,
             itemCount: store$.itemCount,
             moveAmount: -10,
           });
-          scrollToItem(nextIndex);
+          highlightItem(nextIndex);
           break;
         }
         case keyboardKeys.PageDown: {
-          const previousHightlightedIndex = removeHighlight();
+          const currentIndex = removeHighlight();
           const nextIndex = getNextIndex({
-            currentIndex: previousHightlightedIndex,
+            currentIndex,
             itemCount: store$.itemCount,
             moveAmount: 10,
           });
-          scrollToItem(nextIndex);
+          highlightItem(nextIndex);
           break;
         }
         case keyboardKeys.ArrowDown: {
-          // figure out the currently highlighted item (if any)
-          // we also need to remove that highlight
-          // set the new hightlight based on the index
-
-          const previousHightlightedIndex = removeHighlight();
+          const currentIndex = removeHighlight();
           const nextIndex = getNextIndex({
-            currentIndex: previousHightlightedIndex,
+            currentIndex,
             itemCount: store$.itemCount,
             moveAmount: 1,
           });
-          scrollToItem(nextIndex);
+          highlightItem(nextIndex);
           break;
         }
         case keyboardKeys.ArrowUp: {
@@ -335,13 +341,13 @@ export function createCombobox<T>({
             close();
             return;
           }
-          const previousHightlightedIndex = removeHighlight();
+          const currentIndex = removeHighlight();
           const nextIndex = getNextIndex({
-            currentIndex: previousHightlightedIndex,
+            currentIndex,
             itemCount: store$.itemCount,
             moveAmount: -1,
           });
-          scrollToItem(nextIndex);
+          highlightItem(nextIndex);
           break;
         }
       }
@@ -352,7 +358,6 @@ export function createCombobox<T>({
       const value = (e.target as HTMLInputElement).value;
       inputValue.set(value);
       filterFunction(value);
-
       emitter.emit("update");
     }
 
