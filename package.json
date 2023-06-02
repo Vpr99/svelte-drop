@@ -61,7 +61,7 @@
     "svelte-check": "3.4.3",
     "tslib": "2.5.2",
     "typescript": "5.0.4",
-    "unplugin-icons": "0.16.1",
+    "unplugin-icons": "0.16.2",
     "vite": "4.3.9",
     "vitest": "0.31.3"
   },
