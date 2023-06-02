@@ -21,6 +21,7 @@ import type {
   HTMLLabelAttributes,
 } from "svelte/elements";
 import { createNanoEvents } from "nanoevents";
+import { tick } from "svelte";
 
 interface ComboboxProps<T> {
   items: Writable<T[]>;
@@ -71,7 +72,7 @@ export function createCombobox<T>({
     role: "listbox",
   };
 
-  let $store: {
+  let store$: {
     isOpen: boolean;
     itemCount: number;
     items: T[];
@@ -84,7 +85,19 @@ export function createCombobox<T>({
 
   // @TODO: unsure if we need to unsubscribe from this value when the component using `createCombobox` is unmounted
   state.subscribe((value) => {
-    $store = value;
+    store$ = value;
+
+    /*
+     * Tick definition:
+     *
+     * "[Tick] returns a promise that resolves as soon as any pending state changes have been
+     *  applied to the DOM [...]. When you update component state in Svelte, it doesn't update
+     *  the DOM immediately. Instead, it waits until the next microtask to see if there are any
+     *  other changes that need to be applied..."
+     *
+     * [source](https://svelte.dev/tutorial/tick)
+     */
+    void tick().then(() => emitter.emit("update"));
   });
 
   // @TODO change name?
@@ -117,18 +130,14 @@ export function createCombobox<T>({
   function open() {
     isOpen.set(true);
     document?.getElementById(`${id}-input`)?.focus();
-
-    setTimeout(() => {
-      emitter.emit("update");
-    }, 100);
   }
 
   function setSelectedItem(index: number, input: HTMLInputElement | null) {
-    const string = itemToString($store.items[index]);
-    selectedItem.set($store.items[index]);
+    const string = itemToString(store$.items[index]);
+    selectedItem.set(store$.items[index]);
 
     // @TODO: think through if this should be a required argument (aka: internally handled or always externally managed (or both))
-    selectItem && selectItem($store.items[index]);
+    selectItem && selectItem(store$.items[index]);
     filterFunction(string);
 
     if (input) {
@@ -152,10 +161,7 @@ export function createCombobox<T>({
     const unbind = emitter.on("update", setListValues);
 
     return {
-      destroy: () => {
-        // tying this to the list
-        unbind();
-      },
+      destroy: () => unbind(),
     };
   };
 
@@ -241,7 +247,7 @@ export function createCombobox<T>({
 
     function handleKeydown(e: KeyboardEvent) {
       // Handle key events when the menu is closed.
-      if (!$store.isOpen) {
+      if (!store$.isOpen) {
         // The user presses `esc`. The input should be cleared and lose focus.
         if (e.key === keyboardKeys.Escape) {
           node.blur();
@@ -270,13 +276,14 @@ export function createCombobox<T>({
           break;
         }
         case keyboardKeys.Enter: {
-          const highlit = document.querySelector(
-            `[data-highlighted]`
-          ) as HTMLElement;
-          const index = highlit?.dataset.index;
+          const { index } = (
+            document.querySelector(`[data-highlighted]`) as HTMLElement
+          ).dataset;
+
           if (index) {
             setSelectedItem(parseInt(index, 10), e.target as HTMLInputElement);
           }
+
           close();
           break;
         }
@@ -285,7 +292,7 @@ export function createCombobox<T>({
           break;
         }
         case keyboardKeys.End: {
-          const nextIndex = $store.itemCount - 1;
+          const nextIndex = store$.itemCount - 1;
           scrollToItem(nextIndex);
           break;
         }
@@ -293,7 +300,7 @@ export function createCombobox<T>({
           const previousHightlightedIndex = removeHighlight();
           const nextIndex = getNextIndex({
             currentIndex: previousHightlightedIndex,
-            itemCount: $store.itemCount,
+            itemCount: store$.itemCount,
             moveAmount: -10,
           });
           scrollToItem(nextIndex);
@@ -303,7 +310,7 @@ export function createCombobox<T>({
           const previousHightlightedIndex = removeHighlight();
           const nextIndex = getNextIndex({
             currentIndex: previousHightlightedIndex,
-            itemCount: $store.itemCount,
+            itemCount: store$.itemCount,
             moveAmount: 10,
           });
           scrollToItem(nextIndex);
@@ -317,7 +324,7 @@ export function createCombobox<T>({
           const previousHightlightedIndex = removeHighlight();
           const nextIndex = getNextIndex({
             currentIndex: previousHightlightedIndex,
-            itemCount: $store.itemCount,
+            itemCount: store$.itemCount,
             moveAmount: 1,
           });
           scrollToItem(nextIndex);
@@ -331,7 +338,7 @@ export function createCombobox<T>({
           const previousHightlightedIndex = removeHighlight();
           const nextIndex = getNextIndex({
             currentIndex: previousHightlightedIndex,
-            itemCount: $store.itemCount,
+            itemCount: store$.itemCount,
             moveAmount: -1,
           });
           scrollToItem(nextIndex);
