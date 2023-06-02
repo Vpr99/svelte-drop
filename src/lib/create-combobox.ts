@@ -20,7 +20,7 @@ import type {
   HTMLInputAttributes,
   HTMLLabelAttributes,
 } from "svelte/elements";
-import mitt from "mitt";
+import { createNanoEvents } from "nanoevents";
 
 interface ComboboxProps<T> {
   items: Writable<T[]>;
@@ -46,12 +46,6 @@ interface Combobox<T> {
   inputValue: Readable<string>;
 }
 
-type ListUpdatedEvent = CustomEvent<{ id: string }>;
-
-function dispatchListUpdatedEvent(id: string) {
-  document.dispatchEvent(new CustomEvent("list:update", { detail: { id } }));
-}
-
 export function createCombobox<T>({
   items,
   scrollAlignment = "nearest",
@@ -65,7 +59,7 @@ export function createCombobox<T>({
   const itemCount = writable(0);
   let trapFocus = false;
   const inputValue = writable("");
-  const emitter = mitt();
+  const emitter = createNanoEvents();
 
   const labelAttributes = {
     id: `${id}-label`,
@@ -125,7 +119,7 @@ export function createCombobox<T>({
     document?.getElementById(`${id}-input`)?.focus();
 
     setTimeout(() => {
-      emitter.emit("list:updated");
+      emitter.emit("update");
     }, 100);
   }
 
@@ -155,12 +149,12 @@ export function createCombobox<T>({
     }
 
     setListValues();
-    emitter.on("list:updated", setListValues);
+    const unbind = emitter.on("update", setListValues);
 
     return {
       destroy: () => {
         // tying this to the list
-        emitter.all.clear();
+        unbind();
       },
     };
   };
@@ -174,7 +168,6 @@ export function createCombobox<T>({
         ?.removeAttribute("data-highlighted");
       const { index } = node.dataset;
 
-      console.log(node);
       if (index) {
         setAttribute(node, "data-highlighted");
       }
@@ -277,9 +270,13 @@ export function createCombobox<T>({
           break;
         }
         case keyboardKeys.Enter: {
-          const highlit = document.querySelector(`[data-highlighted]`);
+          const highlit = document.querySelector(
+            `[data-highlighted]`
+          ) as HTMLElement;
           const index = highlit?.dataset.index;
-          setSelectedItem(index, e.target as HTMLInputElement);
+          if (index) {
+            setSelectedItem(parseInt(index, 10), e.target as HTMLInputElement);
+          }
           close();
           break;
         }
@@ -349,7 +346,7 @@ export function createCombobox<T>({
       inputValue.set(value);
       filterFunction(value);
 
-      emitter.emit("list:updated");
+      emitter.emit("update");
     }
 
     const cleanup = groupListeners(

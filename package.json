@@ -68,7 +68,7 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "dependencies": {
-    "mitt": "^3.0.0",
+    "nanoevents": "^7.0.1",
     "nanoid": "4.0.2"
   }
 }
