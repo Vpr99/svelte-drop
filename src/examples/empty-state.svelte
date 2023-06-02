@@ -96,10 +96,7 @@
     </label>
   </div>
   <ul
-    use:list={{
-      inputValue: $inputValue,
-      isOpen: $isOpen,
-    }}
+    use:list
     style:--status={!($isOpen && $items.length) ? "visible" : "visible"}
     class="list"
     {...listAttributes}

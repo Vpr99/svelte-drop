@@ -132,7 +132,7 @@ export function setAttribute(
   qualifiedName: string,
   value?: unknown
 ) {
-  value
+  typeof value !== "undefined"
     ? el.setAttribute(qualifiedName, String(value))
     : el.setAttribute(qualifiedName, "");
 }

@@ -35,7 +35,7 @@ interface Combobox<T> {
   filterInput: Action<HTMLInputElement, void>;
   listItem: Action<HTMLLIElement, void>;
   // @TODO: support OL, DL, div, nav, etc
-  list: Action<HTMLUListElement, { inputValue: string; isOpen: boolean }>;
+  list: Action<HTMLUListElement, void>;
   filterInputAttributes: Readable<HTMLInputAttributes>;
   labelAttributes: HTMLLabelAttributes;
   listAttributes: HTMLAttributes<
@@ -58,6 +58,7 @@ export function createCombobox<T>({
   const itemCount = writable(0);
   let trapFocus = false;
   const inputValue = writable("");
+  let listUpdated: CustomEvent<{ id: string }>;
 
   const labelAttributes = {
     id: `${id}-label`,
@@ -109,12 +110,15 @@ export function createCombobox<T>({
     if (!trapFocus) {
       isOpen.set(false);
     }
+
+    // document.dispatchEvent(listUpdated);
   }
 
   // Open the menu and focus the input.
   function open() {
     isOpen.set(true);
     document?.getElementById(`${id}-input`)?.focus();
+    document.dispatchEvent(listUpdated);
   }
 
   function setSelectedItem(index: number, input: HTMLInputElement | null) {
@@ -130,14 +134,16 @@ export function createCombobox<T>({
     }
   }
 
-  const list: Action<
-    HTMLUListElement,
-    {
-      inputValue: string;
-      isOpen: boolean;
-    }
-  > = (node) => {
-    function checkList() {
+  const list: Action<HTMLUListElement> = (node) => {
+    listUpdated = new CustomEvent("list:update", { detail: { id } });
+
+    function checkList(e: Event) {
+      // due to the possibilty of having multiple comboboxes, we need to ensure the custom event
+      // that was fired matches the id on this instance of the combobox
+      if ((e as CustomEvent<{ id: string }>).detail.id !== id) {
+        return;
+      }
+
       const listItems = node.querySelectorAll("[data-list-item]");
       listItems.forEach((el, i) => {
         setAttribute(el, "data-index", i);
@@ -147,11 +153,12 @@ export function createCombobox<T>({
       itemCount.set(listItems.length);
     }
 
-    checkList();
+    document.addEventListener("list:update", checkList);
 
     return {
-      update: () => checkList(),
-      destroy: () => undefined,
+      destroy: () => {
+        document.removeEventListener("list:update", checkList);
+      },
     };
   };
 
@@ -210,10 +217,12 @@ export function createCombobox<T>({
 
   const filterInput: Action<HTMLInputElement, void> = (node) => {
     function removeHighlight() {
-      const highlit = document.querySelector(`[data-highlighted]`);
-      if (highlit) {
-        highlit.removeAttribute("data-highlighted");
-        const { index } = highlit.dataset;
+      const item = document.querySelector(`[data-highlighted]`) as HTMLElement;
+
+      if (item) {
+        item.removeAttribute("data-highlighted");
+        const { index } = item.dataset;
+
         if (index) {
           return parseInt(index, 10);
         }
@@ -334,6 +343,8 @@ export function createCombobox<T>({
       const value = (e.target as HTMLInputElement).value;
       inputValue.set(value);
       filterFunction(value);
+
+      document.dispatchEvent(listUpdated);
     }
 
     const cleanup = groupListeners(
