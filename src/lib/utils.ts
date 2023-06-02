@@ -125,3 +125,14 @@ export function groupListeners(...callbacks: (() => void)[]): () => void {
     callbacks.forEach((callback) => callback());
   };
 }
+
+/** @TODO maybe support an array of attributes? */
+export function setAttribute(
+  el: Element,
+  qualifiedName: string,
+  value?: unknown
+) {
+  value
+    ? el.setAttribute(qualifiedName, String(value))
+    : el.setAttribute(qualifiedName, "");
+}

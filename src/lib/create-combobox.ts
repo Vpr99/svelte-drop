@@ -12,6 +12,7 @@ import {
   keyboardKeys,
   addEventListener,
   groupListeners,
+  setAttribute,
 } from "./utils.js";
 import { nanoid } from "nanoid";
 import type {
@@ -138,10 +139,9 @@ export function createCombobox<T>({
   > = (node) => {
     function checkList() {
       const listItems = node.querySelectorAll("[data-list-item]");
-      // @TODO add abstraction that lets us set empty values and handles coercion.
       listItems.forEach((el, i) => {
-        el.setAttribute("data-index", String(i));
-        el.setAttribute("id", `${id}-descendent-${i}`);
+        setAttribute(el, "data-index", i);
+        setAttribute(el, "id", `${id}-descendent-${i}`);
       });
 
       itemCount.set(listItems.length);
@@ -156,7 +156,7 @@ export function createCombobox<T>({
   };
 
   const listItem: Action<HTMLLIElement, void> = (node) => {
-    node.setAttribute("data-list-item", "");
+    setAttribute(node, "data-list-item");
 
     function highlightItem() {
       document
@@ -164,7 +164,7 @@ export function createCombobox<T>({
         ?.removeAttribute("data-highlighted");
       const { index } = node.dataset;
       if (index) {
-        node.setAttribute("data-highlighted", "");
+        setAttribute(node, "data-highlighted");
       }
     }
 
@@ -227,7 +227,7 @@ export function createCombobox<T>({
     function scrollToItem(index: number) {
       const el = document.querySelector(`[data-index="${index}"]`);
       if (el) {
-        el.setAttribute("data-highlighted", "");
+        setAttribute(el, "data-highlighted");
         el.scrollIntoView({ block: scrollAlignment });
       }
     }
