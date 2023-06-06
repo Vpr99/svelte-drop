@@ -2,11 +2,7 @@ import { createNanoEvents } from "nanoevents";
 import { nanoid } from "nanoid";
 import { tick } from "svelte";
 import type { Action } from "svelte/action";
-import type {
-  HTMLAttributes,
-  HTMLInputAttributes,
-  HTMLLabelAttributes,
-} from "svelte/elements";
+import type { HTMLInputAttributes, HTMLLabelAttributes } from "svelte/elements";
 import {
   derived,
   readonly,
@@ -17,7 +13,7 @@ import {
 import {
   addEventListener,
   getNextIndex,
-  groupListeners,
+  chain,
   interactionKeys,
   keyboardKeys,
   setAttribute,
@@ -33,18 +29,19 @@ interface ComboboxProps<T> {
 }
 
 interface Combobox<T> {
-  isOpen: Readable<boolean>;
   filterInput: Action<HTMLInputElement>;
-  listItem: Action<HTMLLIElement>;
-  // @TODO: support OL, DL, div, nav, etc
-  list: Action<HTMLUListElement>;
   filterInputAttributes: Readable<HTMLInputAttributes>;
-  labelAttributes: HTMLLabelAttributes;
-  listAttributes: HTMLAttributes<
-    HTMLUListElement | HTMLOListElement | HTMLDListElement
-  >;
-  selectedItem: Readable<T>;
   inputValue: Readable<string>;
+  isOpen: Readable<boolean>;
+  labelAttributes: HTMLLabelAttributes;
+  list: Action<HTMLElement>;
+  listItem: Action<HTMLLIElement>;
+  selectedItem: Readable<T>;
+}
+
+interface Events {
+  highlightItem: (index: number) => void;
+  update: () => void;
 }
 
 export function createCombobox<T>({
@@ -54,23 +51,21 @@ export function createCombobox<T>({
   filterFunction,
   selectItem,
 }: ComboboxProps<T>): Combobox<T> {
+  const emitter = createNanoEvents<Events>();
+  const highlightedIndex = writable(-1);
   const id = nanoid(6);
-  const isOpen = writable(false);
-  const selectedItem = writable<T>(undefined);
-  const itemCount = writable(0);
-  let trapFocus = false;
   const inputValue = writable("");
-  const emitter = createNanoEvents();
+  const isOpen = writable(false);
+  const itemCount = writable(0);
+  const selectedItem = writable<T>(undefined);
+  let trapFocus = false;
 
-  const labelAttributes = {
-    id: `${id}-label`,
-    for: `${id}-input`,
-  };
-
-  const listAttributes = {
-    id: `${id}-menu`,
-    role: "listbox",
-  };
+  function getFilterInput() {
+    return document.getElementById(`${id}-input`) as HTMLInputElement;
+  }
+  function getList() {
+    return document.getElementById(`${id}-menu`) as HTMLElement;
+  }
 
   let store$: {
     isOpen: boolean;
@@ -100,21 +95,24 @@ export function createCombobox<T>({
     void tick().then(() => emitter.emit("update"));
   });
 
-  // @TODO change name?
-  // @TODO add `satisfies` maybe?
-  // @TODO see if we can do without `as const`.
+  const labelAttributes = {
+    id: `${id}-label`,
+    for: `${id}-input`,
+  };
+
   const filterInputAttributes = derived(
-    [isOpen],
-    ([isOpen]) =>
-      ({
-        "aria-autocomplete": "list",
-        "aria-controls": `${id}-menu`,
-        "aria-expanded": isOpen,
-        "aria-labelledby": `${id}-label`,
-        autocomplete: "off",
-        id: `${id}-input`,
-        role: "combobox",
-      } as const)
+    [isOpen, highlightedIndex],
+    ([isOpen, highlightedIndex]): HTMLInputAttributes => ({
+      "aria-autocomplete": "list",
+      "aria-controls": `${id}-menu`,
+      "aria-expanded": isOpen,
+      "aria-labelledby": `${id}-label`,
+      "aria-activedescendant":
+        highlightedIndex > -1 ? `${id}-descendent-${highlightedIndex}` : "",
+      autocomplete: "off",
+      id: `${id}-input`,
+      role: "combobox",
+    })
   );
 
   // Close the menu.
@@ -129,10 +127,10 @@ export function createCombobox<T>({
   // Open the menu and focus the input.
   function open() {
     isOpen.set(true);
-    document?.getElementById(`${id}-input`)?.focus();
+    getFilterInput().focus();
   }
 
-  function setSelectedItem(index: number, input: HTMLInputElement | null) {
+  function setSelectedItem(index: number) {
     const string = itemToString(store$.items[index]);
     selectedItem.set(store$.items[index]);
 
@@ -140,29 +138,35 @@ export function createCombobox<T>({
     selectItem && selectItem(store$.items[index]);
     filterFunction(string);
 
-    if (input) {
-      input.value = string;
-    }
-  }
-
-  /**
-   * Highlights an item in the list either by mouseover or keyboard navigation.
-   * @param index index of the item to highlight.
-   */
-  function highlightItem(index: number) {
-    const item = document.querySelector(`[data-index="${index}"]`);
-    if (item) {
-      // Mark the item as the active descendant of the input.
-      const input = document.getElementById(`${id}-input`) as HTMLElement;
-      setAttribute(input, "aria-activedescendant", `${id}-descendent-${index}`);
-      // Set the data-highlighted attribute on the item.
-      setAttribute(item, "data-highlighted");
-      // If the item isn't already visible, scroll it into view.
-      item.scrollIntoView({ block: scrollAlignment });
-    }
+    getFilterInput().value = string;
   }
 
   const list: Action<HTMLUListElement> = (node) => {
+    // Set some attributes on the list element.
+    node.setAttribute("role", "listbox");
+    node.setAttribute("id", `${id}-menu`);
+
+    /**
+     * Highlights an item in the list by index. This can
+     * either occur on mouseenter or via keyboard input.
+     * @param index array index of the item to highlight.
+     */
+    function highlightItem(index: number) {
+      // First, set the index in the writable store.
+      highlightedIndex.set(index);
+      // Then iterate over all items and mark the one at the selected index.
+      node.querySelectorAll("[data-list-item]").forEach((item, i) => {
+        if (i === index) {
+          setAttribute(item, "data-highlighted");
+          // If the item isn't already visible, scroll it into view.
+          item.scrollIntoView({ block: scrollAlignment });
+        } else {
+          // Remove the data-highlighted attribute from all others.
+          item.removeAttribute("data-highlighted");
+        }
+      });
+    }
+
     /**
      * Iterates over visible items and ensures that `data-index`
      * and `id` attributes represent their position in the list.
@@ -178,58 +182,57 @@ export function createCombobox<T>({
 
     /**
      * Trigger an update when the component mounts and listen for
-     * future "update" events. This happens when the list is filtered
-     * or the items change.
+     * updates when the list is filtered or the items change.
      */
     updateItemIndices();
-    const unsubscribe = emitter.on("update", updateItemIndices);
+    const unsubscribe = chain(
+      emitter.on("update", updateItemIndices),
+      emitter.on("highlightItem", highlightItem)
+    );
 
     return {
-      destroy: () => unsubscribe(),
+      destroy: () => {
+        unsubscribe();
+      },
     };
   };
 
   const listItem: Action<HTMLLIElement> = (node) => {
+    // Set the `data-list-item` attribute on all list items.
     setAttribute(node, "data-list-item");
 
-    function onMouseEnter() {
-      const { index } = node.dataset;
-      if (index) {
-        highlightItem(parseInt(index, 10));
-      }
-    }
-
-    function unHighlightItem() {
-      node.removeAttribute("data-highlighted");
-    }
-
-    function onClick() {
-      const { index } = node.dataset;
-      if (index) {
-        const parsedIndex = parseInt(index, 10);
-        setSelectedItem(
-          parsedIndex,
-          document.getElementById(`${id}-input`) as HTMLInputElement
-        );
-        document.getElementById(`${id}-input`)?.focus();
-        close();
-      }
+    function onMouseUp() {
+      trapFocus = false;
     }
 
     function onMouseDown() {
       trapFocus = true;
     }
 
-    function onMouseUp() {
-      trapFocus = false;
+    function onClick() {
+      if (node.dataset.index) {
+        setSelectedItem(parseInt(node.dataset.index, 10));
+        getFilterInput().focus();
+        close();
+      }
     }
 
-    const cleanup = groupListeners(
-      addEventListener(node, "mouseenter", onMouseEnter),
-      addEventListener(node, "mouseleave", unHighlightItem),
-      addEventListener(node, "mousedown", onMouseDown),
+    function onMouseEnter() {
+      if (node.dataset.index) {
+        emitter.emit("highlightItem", parseInt(node.dataset.index, 10));
+      }
+    }
+
+    function onMouseLeave() {
+      emitter.emit("highlightItem", -1);
+    }
+
+    const cleanup = chain(
       addEventListener(document, "mouseup", onMouseUp),
-      addEventListener(node, "click", onClick)
+      addEventListener(node, "mousedown", onMouseDown),
+      addEventListener(node, "click", onClick),
+      addEventListener(node, "mouseenter", onMouseEnter),
+      addEventListener(node, "mouseleave", onMouseLeave)
     );
 
     return {
@@ -240,21 +243,16 @@ export function createCombobox<T>({
   };
 
   const filterInput: Action<HTMLInputElement> = (node) => {
-    function removeHighlight() {
-      const item = document.querySelector<HTMLElement>(`[data-highlighted]`);
-      if (item) {
-        item.removeAttribute("data-highlighted");
-        const { index } = item.dataset;
-        if (index) {
-          return parseInt(index, 10);
-        }
-      }
-      return -1;
+    /**
+     * Returns the index of the currently highlighted
+     * item or -1 if no item is highlighted.
+     */
+    function getHighlightedIndex() {
+      const item = getList().querySelector<HTMLElement>("[data-highlighted]");
+      return item?.dataset.index ? parseInt(item.dataset.index, 10) : -1;
     }
 
-    /**
-     * Handles all keyboard events when the input is focused.
-     */
+    // Handles all keyboard events when the input is focused.
     function handleKeydown(e: KeyboardEvent) {
       // Handle key events when the menu is closed.
       if (!store$.isOpen) {
@@ -286,54 +284,57 @@ export function createCombobox<T>({
           break;
         }
         case keyboardKeys.Enter: {
-          // @TODO handle non-selection callbacks.
+          /**
+           * @TODO handle non-selection callbacks.
+           * @FIXME scope the querySelector to the list.
+           */
           const { index } = (
             document.querySelector(`[data-highlighted]`) as HTMLElement
           ).dataset;
           if (index) {
-            setSelectedItem(parseInt(index, 10), e.target as HTMLInputElement);
+            setSelectedItem(parseInt(index, 10));
           }
 
           close();
           break;
         }
         case keyboardKeys.Home: {
-          highlightItem(0);
+          emitter.emit("highlightItem", 0);
           break;
         }
         case keyboardKeys.End: {
           const nextIndex = store$.itemCount - 1;
-          highlightItem(nextIndex);
+          emitter.emit("highlightItem", nextIndex);
           break;
         }
         case keyboardKeys.PageUp: {
-          const currentIndex = removeHighlight();
+          const currentIndex = getHighlightedIndex();
           const nextIndex = getNextIndex({
             currentIndex,
             itemCount: store$.itemCount,
             moveAmount: -10,
           });
-          highlightItem(nextIndex);
+          emitter.emit("highlightItem", nextIndex);
           break;
         }
         case keyboardKeys.PageDown: {
-          const currentIndex = removeHighlight();
+          const currentIndex = getHighlightedIndex();
           const nextIndex = getNextIndex({
             currentIndex,
             itemCount: store$.itemCount,
             moveAmount: 10,
           });
-          highlightItem(nextIndex);
+          emitter.emit("highlightItem", nextIndex);
           break;
         }
         case keyboardKeys.ArrowDown: {
-          const currentIndex = removeHighlight();
+          const currentIndex = getHighlightedIndex();
           const nextIndex = getNextIndex({
             currentIndex,
             itemCount: store$.itemCount,
             moveAmount: 1,
           });
-          highlightItem(nextIndex);
+          emitter.emit("highlightItem", nextIndex);
           break;
         }
         case keyboardKeys.ArrowUp: {
@@ -341,13 +342,13 @@ export function createCombobox<T>({
             close();
             return;
           }
-          const currentIndex = removeHighlight();
+          const currentIndex = getHighlightedIndex();
           const nextIndex = getNextIndex({
             currentIndex,
             itemCount: store$.itemCount,
             moveAmount: -1,
           });
-          highlightItem(nextIndex);
+          emitter.emit("highlightItem", nextIndex);
           break;
         }
       }
@@ -361,7 +362,7 @@ export function createCombobox<T>({
       emitter.emit("update");
     }
 
-    const cleanup = groupListeners(
+    const cleanup = chain(
       addEventListener(node, "blur", close),
       addEventListener(node, "focus", open),
       addEventListener(node, "keydown", handleKeydown),
@@ -382,7 +383,6 @@ export function createCombobox<T>({
     filterInput,
     filterInputAttributes,
     labelAttributes,
-    listAttributes,
     list,
     listItem,
   };

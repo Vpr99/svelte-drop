@@ -45,7 +45,6 @@
     inputValue,
     filterInput,
     labelAttributes,
-    listAttributes,
     filterInputAttributes,
     selectedItem,
     listItem,
@@ -97,7 +96,6 @@
     use:list
     style:--status={!($isOpen && $items.length) ? "visible" : "visible"}
     class="list"
-    {...listAttributes}
   >
     {#if $isOpen}
       {#if $items.length === 0}

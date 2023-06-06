@@ -120,7 +120,7 @@ export function addEventListener<
   };
 }
 
-export function groupListeners(...callbacks: (() => void)[]): () => void {
+export function chain(...callbacks: (() => void)[]): () => void {
   return function () {
     callbacks.forEach((callback) => callback());
   };
