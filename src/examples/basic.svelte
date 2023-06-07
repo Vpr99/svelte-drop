@@ -1,4 +1,8 @@
-<!-- Playground example during dev -->
+<!-- 
+  - svelte scoped css 
+  - filtering
+  - open/close
+ -->
 <script lang="ts">
   import { writable } from "svelte/store";
   import { createCombobox } from "$lib/index.js";

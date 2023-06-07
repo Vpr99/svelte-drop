@@ -45,8 +45,8 @@ describe("addEventListener", () => {
   });
 });
 
-describe("groupListeners", () => {
-  test("grouping listeners and calling callbacks", () => {
+describe("chain", () => {
+  test("grouping functions and calling callbacks", () => {
     const functionMock = vi.fn();
     const callbackMock = vi.fn();
     /**
@@ -60,12 +60,8 @@ describe("groupListeners", () => {
       };
     }
 
-    // Create a listener group.
-    const cleanup = utils.groupListeners(
-      testFunction(),
-      testFunction(),
-      testFunction()
-    );
+    // Create a function group.
+    const cleanup = utils.chain(testFunction(), testFunction(), testFunction());
     // Assert that `functionMock` was called 3x and `callbackMock` was not.
     expect(functionMock).toBeCalledTimes(3);
     expect(callbackMock).not.toBeCalled();

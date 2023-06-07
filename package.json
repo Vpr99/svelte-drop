@@ -68,6 +68,7 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "dependencies": {
+    "nanoevents": "^7.0.1",
     "nanoid": "4.0.2"
   }
 }

@@ -1,26 +1,31 @@
-<!-- Playground example during dev -->
+<!-- 
+  no items
+  adding a new item
+ -->
 <script lang="ts">
   import { writable } from "svelte/store";
   import { createCombobox } from "$lib/index.js";
 
   interface Book {
+    id: number;
     author: string;
     title: string;
   }
 
-  const books: Book[] = [
-    { author: "Harper Lee", title: "To Kill a Mockingbird" },
-    { author: "Lev Tolstoy", title: "War and Peace" },
-    { author: "Fyodor Dostoyevsy", title: "The Idiot" },
-    { author: "Oscar Wilde", title: "A Picture of Dorian Gray" },
-    { author: "George Orwell", title: "1984" },
-    { author: "Jane Austen", title: "Pride and Prejudice" },
-    { author: "Marcus Aurelius", title: "Meditations" },
-    { author: "Fyodor Dostoevsky", title: "The Brothers Karamazov" },
-    { author: "Lev Tolstoy", title: "Anna Karenina" },
-    { author: "Fyodor Dostoevsky", title: "Crime and Punishment" },
+  let books: Book[] = [
+    { id: 1, author: "Harper Lee", title: "To Kill a Mockingbird" },
+    { id: 2, author: "Lev Tolstoy", title: "War and Peace" },
+    { id: 3, author: "Fyodor Dostoyevsy", title: "The Idiot" },
+    { id: 4, author: "Oscar Wilde", title: "A Picture of Dorian Gray" },
+    { id: 5, author: "George Orwell", title: "1984" },
+    { id: 6, author: "Jane Austen", title: "Pride and Prejudice" },
+    { id: 7, author: "Marcus Aurelius", title: "Meditations" },
+    { id: 8, author: "Fyodor Dostoevsky", title: "The Brothers Karamazov" },
+    { id: 9, author: "Lev Tolstoy", title: "Anna Karenina" },
+    { id: 10, author: "Fyodor Dostoevsky", title: "Crime and Punishment" },
   ];
 
+  // set the store initially
   const items = writable(books);
 
   function getBooksFilter(inputValue: string) {
@@ -37,23 +42,37 @@
 
   const {
     isOpen,
+    inputValue,
     filterInput,
     labelAttributes,
-    listAttributes,
     filterInputAttributes,
-    highlightedIndex,
     selectedItem,
-    getItemProps,
     listItem,
+    list,
   } = createCombobox({
     items,
     filterFunction(value) {
+      // the store is a super mutable snapshot of books
       items.set(books.filter(getBooksFilter(value)));
     },
     itemToString(item) {
       return item ? item.title : "";
     },
+
+    // something here
   });
+
+  function addItem() {
+    /* 
+      ideas: (least controlled to most controlled)
+      - passing back the current input value
+      - passing back an onclick event with the value
+    */
+
+    // in order to prevent items being removed, they have to be added to the full source full of truth first
+    books = books.concat([{ id: 20, author: "Unknown", title: $inputValue }]);
+    items.set(books.filter(getBooksFilter($inputValue)));
+  }
 </script>
 
 <div>
@@ -74,20 +93,25 @@
     </label>
   </div>
   <ul
+    use:list
     style:--status={!($isOpen && $items.length) ? "visible" : "visible"}
     class="list"
-    {...listAttributes}
   >
     {#if $isOpen}
-      {#each $items as item, index (index)}
+      {#if $items.length === 0}
+        <li use:listItem class="item">
+          <button on:click={addItem}>
+            couldn't find: {$inputValue}<br />
+            add it to the list
+          </button>
+        </li>
+      {/if}
+
+      {#each $items as item (item.id)}
         <li
           use:listItem
           class="item"
           style:--font-weight={$selectedItem === item ? "700" : "400"}
-          style:--background-color={$highlightedIndex === index
-            ? "#eee"
-            : "transparent"}
-          {...getItemProps(index)}
         >
           <span>{item.title}</span>
           <span class="item-author">{item.author}</span>
@@ -134,11 +158,15 @@
   }
 
   .item {
-    background-color: var(--background-color, transparent);
+    background-color: transparent;
     display: flex;
     flex-direction: column;
     font-weight: var(--font-weight, 400);
     padding: 0.5rem 0.75rem;
+  }
+
+  .item[data-highlighted] {
+    background-color: #eee;
   }
 
   .item-author {
