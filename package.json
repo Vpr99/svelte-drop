@@ -47,7 +47,7 @@
     "@typescript-eslint/eslint-plugin": "5.59.11",
     "@typescript-eslint/parser": "5.59.11",
     "clsx": "1.2.1",
-    "eslint": "8.42.0",
+    "eslint": "8.43.0",
     "eslint-config-prettier": "8.8.0",
     "eslint-plugin-svelte": "2.30.0",
     "happy-dom": "9.20.3",
