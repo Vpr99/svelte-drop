@@ -62,8 +62,8 @@ devDependencies:
     specifier: 0.1.12
     version: 0.1.12
   shiki:
-    specifier: 0.14.2
-    version: 0.14.2
+    specifier: 0.14.3
+    version: 0.14.3
   simple-git-hooks:
     specifier: 2.8.1
     version: 2.8.1
@@ -3687,8 +3687,8 @@ packages:
       vscode-textmate: 6.0.0
     dev: true
 
-  /shiki@0.14.2:
-    resolution: {integrity: sha512-ltSZlSLOuSY0M0Y75KA+ieRaZ0Trf5Wl3gutE7jzLuIcWxLp5i/uEnLoQWNvgKXQ5OMpGkJnVMRLAuzjc0LJ2A==}
+  /shiki@0.14.3:
+    resolution: {integrity: sha512-U3S/a+b0KS+UkTyMjoNojvTgrBHjgp7L6ovhFVZsXmBGnVdQ4K4U9oK0z63w538S91ATngv1vXigHCSWOwnr+g==}
     dependencies:
       ansi-sequence-parser: 1.1.0
       jsonc-parser: 3.2.0
