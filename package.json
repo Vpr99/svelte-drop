@@ -58,7 +58,7 @@
     "shiki": "0.14.3",
     "simple-git-hooks": "2.8.1",
     "svelte": "3.59.2",
-    "svelte-check": "3.4.4",
+    "svelte-check": "3.4.5",
     "tslib": "2.6.0",
     "typescript": "5.1.6",
     "unplugin-icons": "0.16.3",
