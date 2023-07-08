@@ -62,7 +62,7 @@
     "tslib": "2.6.0",
     "typescript": "5.1.6",
     "unplugin-icons": "0.16.3",
-    "vite": "4.3.9",
+    "vite": "4.4.2",
     "vitest": "0.32.4"
   },
   "types": "./dist/index.d.ts",
