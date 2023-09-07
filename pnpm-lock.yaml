@@ -17,8 +17,8 @@ devDependencies:
     specifier: 1.1.12
     version: 1.1.12
   '@sveltejs/adapter-vercel':
-    specifier: 3.0.2
-    version: 3.0.2(@sveltejs/kit@1.22.3)
+    specifier: 3.0.3
+    version: 3.0.3(@sveltejs/kit@1.22.3)
   '@sveltejs/kit':
     specifier: 1.22.3
     version: 1.22.3(svelte@3.59.2)(vite@4.4.4)
@@ -699,13 +699,13 @@ packages:
     resolution: {integrity: sha512-XJfwUVUKDHF5ugKwIcxEgc9k8b7HbznCp6eUfWgu710hMPNIO4aw4/zB5RogDQz8nd6gyCDpU9O/m6qYEWY6yQ==}
     dev: true
 
-  /@sveltejs/adapter-vercel@3.0.2(@sveltejs/kit@1.22.3):
-    resolution: {integrity: sha512-CQcLoKeVmF5Si+sJax0v8KMtXviJXfDXozJt3zfPHHYytCwMcGpJXsgqpqUbkdaF2xxgXuhTD7ClhQRFThbprw==}
+  /@sveltejs/adapter-vercel@3.0.3(@sveltejs/kit@1.22.3):
+    resolution: {integrity: sha512-0FQMjR6klW4627ewdclSr0lUe/DqiiyOaRTfgb5cXgNbVMsZMOA2fQ77TYQnJdvMfSEWe6y8uznV48XqKh9+vA==}
     peerDependencies:
       '@sveltejs/kit': ^1.5.0
     dependencies:
       '@sveltejs/kit': 1.22.3(svelte@3.59.2)(vite@4.4.4)
-      '@vercel/nft': 0.22.6
+      '@vercel/nft': 0.23.1
       esbuild: 0.18.11
     transitivePeerDependencies:
       - encoding
@@ -1006,8 +1006,8 @@ packages:
       eslint-visitor-keys: 3.4.1
     dev: true
 
-  /@vercel/nft@0.22.6:
-    resolution: {integrity: sha512-gTsFnnT4mGxodr4AUlW3/urY+8JKKB452LwF3m477RFUJTAaDmcz2JqFuInzvdybYIeyIv1sSONEJxsxnbQ5JQ==}
+  /@vercel/nft@0.23.1:
+    resolution: {integrity: sha512-NE0xSmGWVhgHF1OIoir71XAd0W0C1UE3nzFyhpFiMr3rVhetww7NvM1kc41trBsPG37Bh+dE5FYCTMzM/gBu0w==}
     engines: {node: '>=14'}
     hasBin: true
     dependencies:
