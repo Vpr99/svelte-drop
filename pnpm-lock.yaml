@@ -23,8 +23,8 @@ devDependencies:
     specifier: 1.22.3
     version: 1.22.3(svelte@3.59.2)(vite@4.4.4)
   '@sveltejs/package':
-    specifier: 2.2.0
-    version: 2.2.0(svelte@3.59.2)(typescript@5.1.6)
+    specifier: 2.2.2
+    version: 2.2.2(svelte@3.59.2)(typescript@5.1.6)
   '@svelteness/kit-docs':
     specifier: 1.1.3
     version: 1.1.3(svelte@3.59.2)
@@ -739,8 +739,8 @@ packages:
       - supports-color
     dev: true
 
-  /@sveltejs/package@2.2.0(svelte@3.59.2)(typescript@5.1.6):
-    resolution: {integrity: sha512-TXbrzsk+T5WNcSzrU41D8P32vU5guo96lVS11/R+rpLhZBH5sORh0Qp6r68Jg4O5vcdS3JLwpwcpe8VFbT/QeA==}
+  /@sveltejs/package@2.2.2(svelte@3.59.2)(typescript@5.1.6):
+    resolution: {integrity: sha512-rP3sVv6cAntcdcG4r4KspLU6nZYYUrHJBAX3Arrw0KJFdgxtlsi2iDwN0Jwr/vIkgjcU0ZPWM8kkT5kpZDlWAw==}
     engines: {node: ^16.14 || >=18}
     hasBin: true
     peerDependencies:

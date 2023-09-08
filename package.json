@@ -42,7 +42,7 @@
     "@iconify-json/ri": "1.1.12",
     "@sveltejs/adapter-vercel": "3.0.3",
     "@sveltejs/kit": "1.22.3",
-    "@sveltejs/package": "2.2.0",
+    "@sveltejs/package": "2.2.2",
     "@svelteness/kit-docs": "1.1.3",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
